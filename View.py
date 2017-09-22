@@ -20,67 +20,68 @@ class View(QWidget):
 		self.title = 'Project 2 - Improved Image Browser'
 		self.model = Model.Model(self)
 		self.model.initModel(windowWidth, files)
-		labels = self.model.generateLabels(6)
+		self.labels = self.model.generateLabels(6)
 		self.initUI()
 
 	def initUI(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet('background-color: #B5B2C2;')
-
-		self.draw(0, 0, 0) 
-
+		self.draw() 
 		self.show()
 
-	# TODO: THIS IS WHERE I'VE LEFT OFF!!!!!!!!!!!!!*********************************************
 	# Attach images to labels in thumbnail or fullscreen mode
-	def draw(self, mode, selected, centered = -1):
-		if self.mode != mode:
-			self.clearBrowser()
-		self.mode = mode
+	def draw(self):	# REMOVE THESE PARAMETERS....
+		# self.clearBrowser()
+		# self.model.setMode(mode)
+		# self.model.setSelectedIndex(selected)
+		mode = self.model.getMode()
+		selected = self.model.getSelectedIndex()
+		centered = -1
 		
-		self.h = (selected - 1) % len(self.files)
-		self.i = (selected) 	% len(self.files)
-		self.j = (selected + 1) % len(self.files)
-
 		# Thumbnail Mode
 		if mode == 0:	
-			y = self.height - (self.thumbH * 2) 
+			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 2) 
 			for i in range(5):
-				x = ((self.width - self.thumbW*5)/2) + i*self.thumbW
+				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*5)/2) + i*self.model.getThumbWidth())
 				# Center the highlighted thumbnail when returning from full screen mode
 				if centered > 0:
-					thumb = (centered + i) % len(self.files)
+					thumb = (centered + i) % len(self.model.getFiles())
 				else:
-					thumb = (selected + i) % len(self.files)				
+					thumb = (selected + i) % len(self.model.getFiles())				
 				color = '#A0C1D1'
 				if thumb == selected:
 					color = '#5A7D7C'	
-
-				self.attachPixmap(thumb, i, x, y, self.thumbW, self.thumbH, self.thumbB, color)
+				
+				self.attachPixmap(thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color)
 		
 		# Full Screen Mode		
 		elif mode == 1:
-			x = (self.width - self.fullW) / 2
-			y = (self.height - self.fullH) / 2
-			self.attachPixmap(selected, 5, x, y, self.fullW, self.fullH, self.fullB, '#5A7D7C')
+			x = (self.model.getWindowWidth() - self.model.getFullWidth()) / 2
+			y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
+			self.attachPixmap(selected, 5, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), '#5A7D7C')
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
+		print(pindex, lindex, x, y, w, h, b, color)
 		mode = 0
 		if lindex == 5:
 			mode = 1
-		self.labels[lindex].pixIndex = pindex
-		self.labels[lindex].labIndex = lindex
-		self.labels[lindex].setVisible(True)
-		self.labels[lindex].setPixmap(self.images[mode][pindex])
+		self.labels[lindex].setPixIndex(pindex)
+		# self.labels[lindex].labIndex = lindex
+		# self.labels[lindex].setVisible(True)
+		
+		self.labels[lindex].setPixmap(self.model.getPixmap(mode, pindex))
+		# print(self.labels[lindex].pixmap())
 		self.labels[lindex].setAlignment(Qt.AlignCenter)
 		self.labels[lindex].setGeometry(QRect(x, y, w, h))
 		self.labels[lindex].setStyleSheet('border: ' + str(b) + 'px solid '+ color+';')
-		self.labels[lindex].clicked.connect(self.mouseSel)	
+		self.labels[lindex].clicked.connect(self.mouseSel)
+		self.labels[lindex].setText('SOME TEXT FOOL')
+		# print(self.labels[lindex].parent)
 
 	def mouseSel(self, label):
-		if self.mode == 0:
+		if self.model.getMode() == 0:
 			self.draw(1, label.pixIndex)
 	
 	# Handles key events and responds according to current browser state
@@ -93,30 +94,30 @@ class View(QWidget):
 		scrollR = 46
 
 		# Enter Full Screen Mode
-		if self.mode == 0 	and event.key() == up:
+		if self.model.getMode() == 0 and event.key() == up:
 			self.draw(1, self.i)
 		# Exit Full Screen Mode			
-		elif self.mode == 1 and event.key() == down:
-			self.draw(0, self.i, (self.i - 2) % len(self.files))
+		elif self.model.getMode() == 1 and event.key() == down:
+			self.draw(0, self.i, (self.i - 2) % len(self.model.getFiles()))
 		# Left - Full Screen
-		elif self.mode == 1 and event.key() == left:
+		elif self.model.getMode() == 1 and event.key() == left:
 			self.draw(1, self.h)
 		# Right - Full Screen		
-		elif self.mode == 1 and event.key() == right:
+		elif self.model.getMode() == 1 and event.key() == right:
 			self.draw(1, self.j)
 		# Left - Thumbnail
-		elif self.mode == 0 and event.key() == left:
+		elif self.model.getMode() == 0 and event.key() == left:
 			self.draw(0, self.h)
 		# Right - Thumbnail		
-		elif self.mode == 0 and event.key() == right:
+		elif self.model.getMode() == 0 and event.key() == right:
 			self.draw(0, self.j)
 		# Next set Left - Thumbnail		
-		elif self.mode == 0 and event.key() == scrollL:
-			nextIndex = (self.i - 5) % len(self.files)
+		elif self.model.getMode() == 0 and event.key() == scrollL:
+			nextIndex = (self.i - 5) % len(self.model.getFiles())
 			self.draw(0, nextIndex, nextIndex)
 		# Next set Right - Thumbnail		
-		elif self.mode == 0 and event.key() == scrollR:
-			nextIndex = (self.i + 5) % len(self.files)
+		elif self.model.getMode() == 0 and event.key() == scrollR:
+			nextIndex = (self.i + 5) % len(self.model.getFiles())
 			self.draw(0, nextIndex, nextIndex)
 
 	# Hide any visible contents on browser window

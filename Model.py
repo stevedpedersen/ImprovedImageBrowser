@@ -22,6 +22,11 @@ class ClickableLabel(QLabel):
 		super().__init__(parent)
 		self.pixIndex = 0
 
+	def setPixIndex(self, i):
+		self.pixIndex = i
+	def getPixIndex(self):
+		return self.pixIndex
+
 	def mousePressEvent(self, event):
 		# on click sends the object name to mouseSel()
 		self.clicked.emit(self)
@@ -33,11 +38,12 @@ class Model(QLabel):
 		self.selectedIndex = 0
 		self.leftmostIndex = 0
 		self.mode = 0
+		self.images = []
 
 	def initModel(self, windowWidth, files):
 		self.setDimensions(windowWidth)
 		self.setFiles(files)
-		self.generateLabels(files)
+		self.generatePixmaps(files)
 		
 
 	def generateLabels(self, quantity):
@@ -58,6 +64,9 @@ class Model(QLabel):
 		self.images.append(thumbs)
 		self.images.append(fulls)		
 
+	def getPixmap(self, mode, index):
+		return self.images[mode][index]
+
 	# Scale image to width or height based on image orientation	& label dimensions
 	def resizeAndFrame(self, filename, w, h, b):		
 		pixmap = QPixmap(filename)		
@@ -75,38 +84,60 @@ class Model(QLabel):
 
 	# Scales everything that is displayed according to window width
 	def setDimensions(self, windowWidth):
-		self.windowWidth = int(windowWidth)
-		self.windowHeight = int(3 * self.windowWidth / 4)
-		self.thumbWidth = int(self.windowWidth / 6)
-		self.thumbHeight = int(3 * self.thumbWidth / 4)
-		self.thumbBorder = int(self.windowWidth / (self.thumbWidth * 0.75))
-		self.fullWidth 	= int(self.windowWidth * 0.9)
-		self.fullHeight	= int(3 * self.fullWidth / 4)
-		self.fullBorder	= int(self.windowWidth / (self.thumbWidth * 0.25))
+		self.setWindowWidth	( int(windowWidth) )
+		self.setWindowHeight( int(3 * self.windowWidth / 4) )
+		self.setThumbWidth	( int(self.windowWidth / 6) )
+		self.setThumbHeight	( int(3 * self.thumbWidth / 4) )
+		self.setThumbBorder	( int(self.windowWidth / (self.thumbWidth * 0.75)) )
+		self.setFullWidth	( int(self.windowWidth * 0.9) )
+		self.setFullHeight	( int(3 * self.fullWidth / 4) )
+		self.setFullBorder	( int(self.windowWidth / (self.thumbWidth * 0.25)) )
 
 	def getWindowWidth(self):
 		return self.windowWidth
+	def setWindowWidth(self, w):
+		self.windowWidth = w
 	def getWindowHeight(self):
 		return self.windowHeight
+	def setWindowHeight(self, h):
+		self.windowHeight = h
+	
 	def getThumbWidth(self):
 		return self.thumbWidth
+	def setThumbWidth(self, w):
+		self.thumbWidth = w
 	def getThumbHeight(self):
 		return self.thumbHeight
+	def setThumbHeight(self, h):
+		self.thumbHeight = h
 	def getThumbBorder(self):
 		return self.thumbBorder
+	def setThumbBorder(self, b):
+		self.thumbBorder = b
+	
 	def getFullWidth(self):
 		return self.fullWidth
+	def setFullWidth(self, w):
+		self.fullWidth = w
 	def getFullHeight(self):
-		return self.thumbHeight
+		return self.fullHeight
+	def setFullHeight(self, h):
+		self.fullHeight = h
 	def getFullBorder(self):
-		return self.thumbBorder
+		return self.fullBorder
+	def setFullBorder(self, b):
+		self.fullBorder = b
 
 	def getSelectedIndex(self):
 		return self.selectedIndex
+	def setSelectedIndex(self, index):
+		self.selectedIndex = index % len(self.getFiles())		
 	def getLeftmostIndex(self):
 		return self.leftmostIndex
 	def getMode(self):
 		return self.mode
+	def setMode(self, mode):
+		self.mode = mode	
 	def getImages(self):
 		return self.images
 	def getFiles(self):
