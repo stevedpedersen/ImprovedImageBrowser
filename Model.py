@@ -9,34 +9,21 @@
 
 
 import os, sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel
+from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap
-from itertools import cycle
 from PyQt5.QtCore import *
-
-class ClickableLabel(QLabel):
-	# when QLabel is clicked, emit a signal with an object param
-	clicked = pyqtSignal(object)
-
-	def __init__(self, parent):
-		super().__init__(parent)
-		self.pixIndex = 0
-
-	def setPixIndex(self, i):
-		self.pixIndex = i
-	def getPixIndex(self):
-		return self.pixIndex
-
-	def mousePressEvent(self, event):
-		# on click sends the object name to mouseSel()
-		self.clicked.emit(self)
+		
 
 class Model(QLabel):
+
+	# when QLabel is clicked, emit a signal with an object param
+	clicked = pyqtSignal(object, str)
 
 	def __init__(self, parent):
 		super().__init__(parent)
 		self.selectedIndex = 0
 		self.leftmostIndex = 0
+		self.pixIndex = 0
 		self.mode = 0
 		self.images = []
 
@@ -49,7 +36,7 @@ class Model(QLabel):
 	def generateLabels(self, quantity):
 		labels = []
 		for _ in range(quantity):
-			labels.append(ClickableLabel(self))
+			labels.append(Model(self))
 		return labels	
 
 	def generatePixmaps(self, files):
@@ -62,9 +49,10 @@ class Model(QLabel):
 			fulls.append(full)
 
 		self.images.append(thumbs)
-		self.images.append(fulls)		
+		self.images.append(fulls)	
 
 	def getPixmap(self, mode, index):
+		# print(self.images[mode][index])
 		return self.images[mode][index]
 
 	# Scale image to width or height based on image orientation	& label dimensions
@@ -92,6 +80,15 @@ class Model(QLabel):
 		self.setFullWidth	( int(self.windowWidth * 0.9) )
 		self.setFullHeight	( int(3 * self.fullWidth / 4) )
 		self.setFullBorder	( int(self.windowWidth / (self.thumbWidth * 0.25)) )
+
+	def mousePressEvent(self, event):
+		# on click sends the object name to mouseSel()
+		self.clicked.emit(self, 'PIX INDEX: ' + str(self.getPixIndex))
+
+	def setPixIndex(self, i):
+		self.pixIndex = i
+	def getPixIndex(self):
+		return self.pixIndex
 
 	def getWindowWidth(self):
 		return self.windowWidth
