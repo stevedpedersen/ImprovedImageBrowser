@@ -1,7 +1,7 @@
-# File: project1.py
+# File: ImageBrowser.py, Model.py, View.py
 # By: Steve Pedersen
-# Date: September 12, 2017
-# Usage: python3 project1.py 
+# Date: September 25, 2017
+# Usage: python3 ImageBrowser.py 
 # System: OS X
 # Dependencies: Python3, PyQt5
 # Description: Creates an image browser that displays images as 
@@ -42,10 +42,7 @@ class View(QWidget):
 			for i in range(5):
 				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*5)/2) + i*self.model.getThumbWidth())
 				# Center the highlighted thumbnail when returning from full screen mode
-				if leftmost == selected:
-					thumb = (selected + i) % len(self.model.getFiles())
-				else:
-					thumb = (leftmost + i) % len(self.model.getFiles())				
+				thumb = (leftmost + i) % len(self.model.getFiles())				
 				color = 'green'
 				if thumb == selected:
 					color = 'red'	
