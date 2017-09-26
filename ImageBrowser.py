@@ -1,7 +1,7 @@
-# File: project1.py
+# File: ImageBrowser.py, Model.py, View.py
 # By: Steve Pedersen
-# Date: September 12, 2017
-# Usage: python3 project1.py 
+# Date: September 25, 2017
+# Usage: python3 ImageBrowser.py 
 # System: OS X
 # Dependencies: Python3, PyQt5
 # Description: Creates an image browser that displays images as 

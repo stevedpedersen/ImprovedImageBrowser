@@ -8,7 +8,7 @@
 # 	thumbnails and fullscreen. Navigation with keys and mouse.
 
 import Model
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import *
 
 class View(QWidget):
@@ -18,7 +18,7 @@ class View(QWidget):
 		self.title = 'Project 2 - Improved Image Browser'
 		self.model = Model.Model(self)
 		self.model.initModel(windowWidth, files)
-		self.labels = self.model.generateLabels(6)
+		self.labels = self.model.generateLabels(self, 6)
 		self.initUI()
 
 	def initUI(self):
@@ -30,12 +30,11 @@ class View(QWidget):
 
 	# Attach images to labels in thumbnail or fullscreen mode
 	def draw(self):	
-		# self.clearBrowser()
-		# self.model.setMode(mode)
-		# self.model.setSelectedIndex(selected)
+		self.clearBrowser()
 		mode = self.model.getMode()
+		# TODO: Setup handler for left and select being too far apart
+		leftmost = self.model.getLeftmostIndex()
 		selected = self.model.getSelectedIndex()
-		centered = -1
 		
 		# Thumbnail Mode
 		if mode == 0:	
@@ -43,10 +42,10 @@ class View(QWidget):
 			for i in range(5):
 				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*5)/2) + i*self.model.getThumbWidth())
 				# Center the highlighted thumbnail when returning from full screen mode
-				if centered > 0:
-					thumb = (centered + i) % len(self.model.getFiles())
+				if leftmost == selected:
+					thumb = (selected + i) % len(self.model.getFiles())
 				else:
-					thumb = (selected + i) % len(self.model.getFiles())				
+					thumb = (leftmost + i) % len(self.model.getFiles())				
 				color = 'green'
 				if thumb == selected:
 					color = 'red'	
@@ -61,7 +60,7 @@ class View(QWidget):
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
-		print(pindex, lindex, x, y, w, h, b, color)
+		#print(pindex, lindex, x, y, w, h, b, color)
 		mode = 0
 		if lindex == 5:
 			mode = 1
@@ -72,18 +71,17 @@ class View(QWidget):
 		self.labels[lindex].setGeometry(QRect(x, y, w, h))
 		self.labels[lindex].setStyleSheet('border: ' + str(b) + 'px solid '+ color)
 		self.labels[lindex].clicked.connect(self.mouseSel)
-		self.labels[lindex].setText('PLEASE SHOW THIS TEXT')
-		self.labels[lindex].setVisible(True)
 		self.labels[lindex].show()
 		
-	# TODO: Refactor
+	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label, testStr):
-		print(testStr)
-		print(label)
 		if self.model.getMode() == 0:
-			self.draw(1, label.pixIndex)
+			self.model.setMode(1)
+			self.model.setSelectedIndex(label.getPixIndex())
+
+		self.draw()		
 	
-	# TODO: Refactor
+	# TODO: Bugfix
 	# Handles key events and responds according to current browser state
 	def keyPressEvent(self, event):
 		up = 16777235
@@ -92,44 +90,62 @@ class View(QWidget):
 		right = 16777236
 		scrollL = 44
 		scrollR = 46
-
-		if event.key() == up:
-			self.labels[0].move(50, 50)
-			self.labels[0].setVisible(True)
-			self.labels[0].show()
-
+		thumb = 0
+		full = 1
 
 		# Enter Full Screen Mode
-		# if self.model.getMode() == 0 and event.key() == up:
-		# 	self.draw(1, self.i)
-		# # Exit Full Screen Mode			
-		# elif self.model.getMode() == 1 and event.key() == down:
-		# 	self.draw(0, self.i, (self.i - 2) % len(self.model.getFiles()))
-		# # Left - Full Screen
-		# elif self.model.getMode() == 1 and event.key() == left:
-		# 	self.draw(1, self.h)
-		# # Right - Full Screen		
-		# elif self.model.getMode() == 1 and event.key() == right:
-		# 	self.draw(1, self.j)
-		# # Left - Thumbnail
-		# elif self.model.getMode() == 0 and event.key() == left:
-		# 	self.draw(0, self.h)
-		# # Right - Thumbnail		
-		# elif self.model.getMode() == 0 and event.key() == right:
-		# 	self.draw(0, self.j)
-		# # Next set Left - Thumbnail		
-		# elif self.model.getMode() == 0 and event.key() == scrollL:
-		# 	nextIndex = (self.i - 5) % len(self.model.getFiles())
-		# 	self.draw(0, nextIndex, nextIndex)
-		# # Next set Right - Thumbnail		
-		# elif self.model.getMode() == 0 and event.key() == scrollR:
-		# 	nextIndex = (self.i + 5) % len(self.model.getFiles())
-		# 	self.draw(0, nextIndex, nextIndex)
+		if self.model.getMode() == thumb and event.key() == up:
+			self.model.setMode(1)
+		# Exit Full Screen Mode			
+		elif self.model.getMode() == full and event.key() == down:
+			self.model.setMode(0)
+			self.model.setLeftmostIndex(self.model.getSelectedIndex() - 2)
+		# Left - Full Screen
+		elif self.model.getMode() == full and event.key() == left:
+			self.model.setSelectedIndex(self.model.getSelectedIndex() - 1)
+		# Right - Full Screen		
+		elif self.model.getMode() == full and event.key() == right:
+			self.model.setSelectedIndex(self.model.getSelectedIndex() + 1)
+		# Left - Thumbnail
+		elif self.model.getMode() == thumb and event.key() == left:
+			selected = self.model.getSelectedIndex()
+			leftmost = self.model.getLeftmostIndex()
+			newIndex = (selected - 1) % len(self.model.getFiles())
+			#print('Left move. New Index: '+str(newIndex))
+			if newIndex < leftmost or newIndex > selected:
+				self.model.setLeftmostIndex(leftmost - 5)
+			# elif ():
+			self.model.setSelectedIndex(newIndex)
+		# Right - Thumbnail		
+		elif self.model.getMode() == thumb and event.key() == right:
+			selected = self.model.getSelectedIndex()
+			leftmost = self.model.getLeftmostIndex()
+			newIndex = (selected + 1) % len(self.model.getFiles())
+			# TODO: bugfix - moving right when left > newIndex
+			if newIndex > ((leftmost + 4) % len(self.model.getFiles())):
+				self.model.setLeftmostIndex(leftmost + 5)
+			self.model.setSelectedIndex(newIndex)
+		# Next set Left - Thumbnail		
+		elif self.model.getMode() == thumb and event.key() == scrollL:
+			selected = self.model.getSelectedIndex()
+			newIndex = (selected - 5) % len(self.model.getFiles())
+			self.model.setSelectedIndex(newIndex)
+			self.model.setLeftmostIndex(newIndex)
+		# Next set Right - Thumbnail		
+		elif self.model.getMode() == thumb and event.key() == scrollR:
+			selected = self.model.getSelectedIndex()
+			newIndex = (selected + 5) % len(self.model.getFiles())
+			self.model.setSelectedIndex(newIndex)
+			self.model.setLeftmostIndex(newIndex)
+
+		print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
+
+		self.draw()
 
 	# Hide any visible contents on browser window
 	def clearBrowser(self):
 		for i in range(6):
-			self.labels[i].setStyleSheet('border: none')
-			self.labels[i].setVisible(False)
+			# self.labels[i].setStyleSheet('border: none')
+			self.labels[i].hide()
 
 

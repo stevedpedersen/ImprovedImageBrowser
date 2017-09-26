@@ -1,7 +1,7 @@
-# File: project1.py
+# File: ImageBrowser.py, Model.py, View.py
 # By: Steve Pedersen
-# Date: September 12, 2017
-# Usage: python3 project1.py 
+# Date: September 25, 2017
+# Usage: python3 ImageBrowser.py 
 # System: OS X
 # Dependencies: Python3, PyQt5
 # Description: Creates an image browser that displays images as 
@@ -33,10 +33,10 @@ class Model(QLabel):
 		self.generatePixmaps(files)
 		
 
-	def generateLabels(self, quantity):
+	def generateLabels(self, window, quantity):
 		labels = []
 		for _ in range(quantity):
-			labels.append(Model(self))
+			labels.append(Model(window))
 		return labels	
 
 	def generatePixmaps(self, files):
@@ -131,6 +131,8 @@ class Model(QLabel):
 		self.selectedIndex = index % len(self.getFiles())		
 	def getLeftmostIndex(self):
 		return self.leftmostIndex
+	def setLeftmostIndex(self, index):
+		self.leftmostIndex = index % len(self.getFiles())
 	def getMode(self):
 		return self.mode
 	def setMode(self, mode):
