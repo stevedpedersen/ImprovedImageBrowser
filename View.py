@@ -7,9 +7,10 @@
 # Description: Creates an image browser that displays images as 
 # 	thumbnails and fullscreen. Navigation with keys and mouse.
 
-import Model
+import Model, os, sys
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import *
+from PyQt5.QtMultimedia import QSoundEffect
 
 class View(QWidget):
 
@@ -69,6 +70,20 @@ class View(QWidget):
 		self.labels[lindex].setStyleSheet('border: ' + str(b) + 'px solid '+ color)
 		self.labels[lindex].clicked.connect(self.mouseSel)
 		self.labels[lindex].show()
+
+	# Type is 0=short, 1=medium, 2=long
+	def playSound(self, soundType = 0):
+		soundFile = 'long.wav'
+		if soundType == 0:
+			soundFile = 'short.wav'
+		elif soundType == 1:
+			soundFile = 'medium.wav'
+
+		self.sound = QSoundEffect()
+		self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
+		self.sound.setLoopCount(1)
+		self.sound.play()
+		# self.sound.stop()		
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label, testStr):
@@ -93,16 +108,20 @@ class View(QWidget):
 		# Enter Full Screen Mode
 		if self.model.getMode() == thumb and event.key() == up:
 			self.model.setMode(1)
+			self.playSound(1)
 		# Exit Full Screen Mode			
 		elif self.model.getMode() == full and event.key() == down:
 			self.model.setMode(0)
 			self.model.setLeftmostIndex(self.model.getSelectedIndex() - 2)
+			self.playSound(1)
 		# Left - Full Screen
 		elif self.model.getMode() == full and event.key() == left:
 			self.model.setSelectedIndex(self.model.getSelectedIndex() - 1)
+			self.playSound(0)
 		# Right - Full Screen		
 		elif self.model.getMode() == full and event.key() == right:
 			self.model.setSelectedIndex(self.model.getSelectedIndex() + 1)
+			self.playSound(0)
 		# Left - Thumbnail
 		elif self.model.getMode() == thumb and event.key() == left:
 			selected = self.model.getSelectedIndex()
@@ -113,6 +132,7 @@ class View(QWidget):
 				self.model.setLeftmostIndex(leftmost - 5)
 			# elif ():
 			self.model.setSelectedIndex(newIndex)
+			self.playSound(0)
 		# Right - Thumbnail		
 		elif self.model.getMode() == thumb and event.key() == right:
 			selected = self.model.getSelectedIndex()
@@ -122,18 +142,21 @@ class View(QWidget):
 			if newIndex > ((leftmost + 4) % len(self.model.getFiles())):
 				self.model.setLeftmostIndex(leftmost + 5)
 			self.model.setSelectedIndex(newIndex)
+			self.playSound(0)
 		# Next set Left - Thumbnail		
 		elif self.model.getMode() == thumb and event.key() == scrollL:
 			selected = self.model.getSelectedIndex()
 			newIndex = (selected - 5) % len(self.model.getFiles())
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
+			self.playSound(2)
 		# Next set Right - Thumbnail		
 		elif self.model.getMode() == thumb and event.key() == scrollR:
 			selected = self.model.getSelectedIndex()
 			newIndex = (selected + 5) % len(self.model.getFiles())
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
+			self.playSound(2)
 
 		print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
 
