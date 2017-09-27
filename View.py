@@ -8,7 +8,7 @@
 # 	thumbnails and fullscreen. Navigation with keys and mouse.
 
 import Model, os, sys
-from PyQt5.QtWidgets import QWidget, QLabel
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QAction, QLineEdit
 from PyQt5.QtCore import *
 from PyQt5.QtMultimedia import QSoundEffect
 
@@ -16,16 +16,21 @@ class View(QWidget):
 
 	def __init__(self, windowWidth, files):
 		super().__init__()
-		self.title = 'Project 2 - Improved Image Browser'
+		self.title = 'Project 2.5 - Improved Image Browser'
 		self.model = Model.Model(self)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, 6)
+		self.textbox = QLineEdit(self)	
+		self.tagComponents = []
+		self.tagComponents.append(self.textbox)
 		self.initUI()
+		self.show()
 
 	def initUI(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
-		self.setStyleSheet('background-color: white')
+		self.setStyleSheet('background-color: #FFFFF8;')
+
 		self.draw() 
 		self.show()
 
@@ -49,12 +54,42 @@ class View(QWidget):
 					color = 'red'	
 				
 				self.attachPixmap(thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color)
-		
+			self.hideTagComponents()
+
 		# Full Screen Mode		
 		elif mode == 1:
 			x = (self.model.getWindowWidth() - self.model.getFullWidth()) / 2
 			y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
 			self.attachPixmap(selected, 5, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
+			self.showTagComponents()
+
+	# add textbox, buttons, and tags
+	def showTagComponents(self):
+		padding = self.model.getFullBorder()
+		windowWidth = self.model.getWindowWidth()
+		windowHeight = self.model.getWindowHeight()
+		self.textbox.resize(windowWidth/3, padding)
+		self.textbox.move(padding, windowHeight - padding*2)
+			
+		# connect button to function on_click
+		self.addButton = QPushButton('Add Tag', self)
+		self.saveButton = QPushButton('Save All Tags', self)
+		self.addButton.clicked.connect(self.on_click)
+		self.saveButton.clicked.connect(self.on_click)
+
+		# self.addButton.setStyleSheet("background-color: rgb(0, 128, 128)")
+		self.addButton.move(windowWidth/2, windowHeight - padding*2)
+		self.saveButton.move(windowWidth/1.5, windowHeight - padding*2)
+
+		self.tagComponents.append(self.addButton)
+		self.tagComponents.append(self.saveButton)
+		for t in self.tagComponents:
+			t.show()
+
+		# print()
+	def hideTagComponents(self):
+		for t in self.tagComponents:
+			t.hide()
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
@@ -71,6 +106,29 @@ class View(QWidget):
 		self.labels[lindex].clicked.connect(self.mouseSel)
 		self.labels[lindex].show()
 
+	def addTag(self):
+		# get new tag from QLineEdit
+		textBoxStr = self.textBox.text()
+		myTagList = self.tagList[self.model.currImage]
+		# add to list of tags for current image
+		myTagList.append(textBoxStr)
+		self.updateCurrentTags(myTagList)
+		self.updateCurrentTagsButtons(myTagList)
+
+		self.textBox.setText()
+		self.setFocus()
+
+	def updateCurrentTags(self, mtl):
+		ss = 'something tag: '
+		for s in mtl:
+			ss = ss + ' ' + s
+		print('Tag list: ', ss)
+		self.currentTags.setText(ss)
+		#self.curentTags.show()
+
+	def updateCurrentTagsButtons(self, mtl):
+		print(mtl)
+
 	# Type is 0=short, 1=medium, 2=long
 	def playSound(self, soundType = 0):
 		soundFile = 'long.wav'
@@ -82,8 +140,13 @@ class View(QWidget):
 		self.sound = QSoundEffect()
 		self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
 		self.sound.setLoopCount(1)
-		self.sound.play()
-		# self.sound.stop()		
+		# self.sound.play()	
+
+	#@pyqtSlot()
+	def on_click(self):
+		textboxValue = self.textbox.text()
+		print(textboxValue)
+		self.textbox.setText("")
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label, testStr):
@@ -96,34 +159,32 @@ class View(QWidget):
 	# TODO: Bugfix
 	# Handles key events and responds according to current browser state
 	def keyPressEvent(self, event):
-		up = 16777235
-		down = 16777237
-		left = 16777234
-		right = 16777236
-		scrollL = 44
-		scrollR = 46
-		thumb = 0
-		full = 1
+		up, down, left, right = 16777235, 16777237, 16777234, 16777236
+		scrollL, scrollR = 44, 46
+		thumb, full = 0, 1
+		short, medium, big = 0, 1, 2
+		tab, esc = 16777217, 16777216
+		currentMode = self.model.getMode()
 
 		# Enter Full Screen Mode
-		if self.model.getMode() == thumb and event.key() == up:
-			self.model.setMode(1)
-			self.playSound(1)
+		if currentMode == thumb and event.key() == up:
+			self.model.setMode(full)
+			self.playSound(medium)
 		# Exit Full Screen Mode			
-		elif self.model.getMode() == full and event.key() == down:
-			self.model.setMode(0)
+		elif currentMode == full and event.key() == down:
+			self.model.setMode(thumb)
 			self.model.setLeftmostIndex(self.model.getSelectedIndex() - 2)
-			self.playSound(1)
+			self.playSound(medium)
 		# Left - Full Screen
-		elif self.model.getMode() == full and event.key() == left:
+		elif currentMode == full and event.key() == left:
 			self.model.setSelectedIndex(self.model.getSelectedIndex() - 1)
-			self.playSound(0)
+			self.playSound(short)
 		# Right - Full Screen		
-		elif self.model.getMode() == full and event.key() == right:
+		elif currentMode == full and event.key() == right:
 			self.model.setSelectedIndex(self.model.getSelectedIndex() + 1)
-			self.playSound(0)
+			self.playSound(short)
 		# Left - Thumbnail
-		elif self.model.getMode() == thumb and event.key() == left:
+		elif currentMode == thumb and event.key() == left:
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected - 1) % len(self.model.getFiles())
@@ -132,9 +193,9 @@ class View(QWidget):
 				self.model.setLeftmostIndex(leftmost - 5)
 			# elif ():
 			self.model.setSelectedIndex(newIndex)
-			self.playSound(0)
+			self.playSound(short)
 		# Right - Thumbnail		
-		elif self.model.getMode() == thumb and event.key() == right:
+		elif currentMode == thumb and event.key() == right:
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected + 1) % len(self.model.getFiles())
@@ -142,21 +203,21 @@ class View(QWidget):
 			if newIndex > ((leftmost + 4) % len(self.model.getFiles())):
 				self.model.setLeftmostIndex(leftmost + 5)
 			self.model.setSelectedIndex(newIndex)
-			self.playSound(0)
+			self.playSound(short)
 		# Next set Left - Thumbnail		
-		elif self.model.getMode() == thumb and event.key() == scrollL:
+		elif currentMode == thumb and event.key() == scrollL:
 			selected = self.model.getSelectedIndex()
 			newIndex = (selected - 5) % len(self.model.getFiles())
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
-			self.playSound(2)
+			self.playSound(big)
 		# Next set Right - Thumbnail		
-		elif self.model.getMode() == thumb and event.key() == scrollR:
+		elif currentMode == thumb and event.key() == scrollR:
 			selected = self.model.getSelectedIndex()
 			newIndex = (selected + 5) % len(self.model.getFiles())
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
-			self.playSound(2)
+			self.playSound(big)
 
 		print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
 

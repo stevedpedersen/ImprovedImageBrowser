@@ -77,7 +77,7 @@ class Model(QLabel):
 		self.setThumbWidth	( int(self.windowWidth / 6) )
 		self.setThumbHeight	( int(3 * self.thumbWidth / 4) )
 		self.setThumbBorder	( int(self.windowWidth / (self.thumbWidth * 0.75)) )
-		self.setFullWidth	( int(self.windowWidth * 0.9) )
+		self.setFullWidth	( int(self.windowWidth * 0.7) )
 		self.setFullHeight	( int(3 * self.fullWidth / 4) )
 		self.setFullBorder	( int(self.windowWidth / (self.thumbWidth * 0.25)) )
 
