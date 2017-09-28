@@ -79,9 +79,9 @@ class View(QWidget):
 		self.labels[lindex].show()
 
 	def initTags(self):
-		self.textbox = QLineEdit(self)	
+		self.textBox = QLineEdit(self)	
 		self.tagComponents, self.tagDict = [], {}
-		self.tagComponents.append(self.textbox)
+		self.tagComponents.append(self.textBox)
 		self.tags = [] # QPushButton 'tags' List
 
 		# create a dict { imgFileName1: [tag1, tag2], ... }
@@ -100,26 +100,32 @@ class View(QWidget):
 		# print(self.tagDict)
 
 	def showTags(self):
+		self.tags = []
 		padding = self.model.getFullBorder()
-		currentTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
-		for i in range(len(self.tagDict[currentTagKey])):
-			self.tags.append(QPushButton(self.tagDict[currentTagKey][i], self))
+		currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
+		# print('self.tags before: ', self.tags)
+		# print('CURR TAG KEY: ', currTagKey)
+		for i in range(len(self.tagDict[currTagKey])):
+			# newTag = 
+			self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
 			self.tags[i].setStyleSheet('background-color: #868e96;')
 			self.tags[i].move(padding, padding + padding*i)
 			self.tags[i].show()
+		# print('self.tags after: ', self.tags)
 
 	def hideTags(self):
 		for t in self.tags:
 			t.hide()
+		self.tags = []
 
 	# add textbox, buttons, and tags
 	def showTagComponents(self):
 		padding = self.model.getFullBorder()
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()
-		self.textbox.resize(windowWidth/3, padding)
-		self.textbox.move(padding, windowHeight - padding*2)
-		self.textbox.setStyleSheet('border: 1px solid #868e96;')
+		self.textBox.resize(windowWidth/3, padding)
+		self.textBox.move(padding, windowHeight - padding*2)
+		self.textBox.setStyleSheet('border: 1px solid #868e96;')
 			
 		# connect button to function on_click
 		self.addButton = QPushButton('Add Tag', self)
@@ -147,15 +153,17 @@ class View(QWidget):
 		print()
 
 	def addTag(self):
-		# get new tag from QLineEdit
 		textBoxStr = self.textBox.text()
-		myTagList = self.tagDict[self.model.currImage]
-		# add to list of tags for current image
-		myTagList.append(textBoxStr)
-		self.updateCurrentTags(myTagList)
-		self.updateCurrentTagsButtons(myTagList)
-
-		self.textBox.setText()
+		
+		if textBoxStr != "":
+			# add to list of tags for current image
+			currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
+			# print('Before adding: ', self.tagDict[currTagKey])
+			self.tagDict[currTagKey].append(textBoxStr)
+			# print('After adding: ', self.tagDict[currTagKey])
+		
+		self.showTags()
+		self.textBox.setText('')
 		self.setFocus()
 
 	def updateCurrentTags(self, mtl):
@@ -265,5 +273,7 @@ class View(QWidget):
 		for i in range(6):
 			# self.labels[i].setStyleSheet('border: none')
 			self.labels[i].hide()
+		self.hideTags()
+		# self.hideTagComponents()
 
 
