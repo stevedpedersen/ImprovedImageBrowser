@@ -53,6 +53,7 @@ class View(QWidget):
 				
 				self.attachPixmap(thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color)
 			self.hideTagComponents()
+			self.hideTags()
 
 		# Full Screen Mode		
 		elif mode == 1:
@@ -60,6 +61,7 @@ class View(QWidget):
 			y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
 			self.attachPixmap(selected, 5, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
 			self.showTagComponents()
+			self.showTags()
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
@@ -78,28 +80,37 @@ class View(QWidget):
 
 	def initTags(self):
 		self.textbox = QLineEdit(self)	
-		self.tagComponents, self.tagList = [], {}
+		self.tagComponents, self.tagDict = [], {}
 		self.tagComponents.append(self.textbox)
+		self.tags = [] # QPushButton 'tags' List
 
+		# create a dict { imgFileName1: [tag1, tag2], ... }
 		imgFileNames = self.model.getFiles()
-		self.tagList = {key: val for key, val in enumerate(imgFileNames)}
-		# for i in range(len(imgFileNames)):
-		# 	self.tagList.append(i)
-		# # self.tagList.append(imgFileNames)
+		self.tagDict = {name: [] for name in imgFileNames}
 
-		# # TODO: add this stuff into the Model so that each Model (QLabel)
-		# tagFileNames = os.listdir('tags')
-		# for f in tagFileNames:
-		# 	file = open('tags/' + f, 'r')
-		# 	fNameNoExt = f[0:f.find('.txt')]
-		# 	for imgName in imgFileNames:
-		# 		if imgName == fNameNoExt:
-		# 			for tag in file.readlines():
-		# 				index = imgFileNames.index(imgName)
-		# 				# self.tagList.append(list(range(len(imgFileNames))))
-		# 				self.tagList[index].append(tag)								
-		# 				# self.tagList[fNameNoExt].append(tag)			
-		print(self.tagList)
+		tagFileNames = os.listdir('tags')
+		for f in tagFileNames:
+			file = open('tags/' + f, 'r')
+			fNameNoExt = f[0:f.find('.txt')]
+			for imgName in imgFileNames:
+				if imgName == fNameNoExt:
+					for tags in file.readlines():
+						self.tagDict[imgName].append(tags)								
+		
+		# print(self.tagDict)
+
+	def showTags(self):
+		padding = self.model.getFullBorder()
+		currentTagKey = self.model.getFiles()[self.model.getPixIndex()]
+		for i in range(len(self.tagDict[currentTagKey])):
+			self.tags.append(QPushButton(self.tagDict[currentTagKey][i], self))
+			self.tags[i].setStyleSheet('background-color: #868e96;')
+			self.tags[i].move(padding, padding + padding*i)
+			self.tags[i].show()
+
+	def hideTags(self):
+		for t in self.tags:
+			t.hide()
 
 	# add textbox, buttons, and tags
 	def showTagComponents(self):
@@ -138,7 +149,7 @@ class View(QWidget):
 	def addTag(self):
 		# get new tag from QLineEdit
 		textBoxStr = self.textBox.text()
-		myTagList = self.tagList[self.model.currImage]
+		myTagList = self.tagDict[self.model.currImage]
 		# add to list of tags for current image
 		myTagList.append(textBoxStr)
 		self.updateCurrentTags(myTagList)
