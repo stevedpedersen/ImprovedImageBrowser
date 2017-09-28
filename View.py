@@ -28,7 +28,6 @@ class View(QWidget):
 		self.setWindowTitle(self.title)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet('background-color: #FFFFFF;')
-
 		self.draw() 
 		self.show()
 
@@ -78,6 +77,7 @@ class View(QWidget):
 		self.labels[lindex].clicked.connect(self.mouseSel)
 		self.labels[lindex].show()
 
+	# Pre-load all tags for each image into a dictionary
 	def initTags(self):
 		self.textBox = QLineEdit(self)	
 		self.tagComponents, self.tagDict = [], {}
@@ -99,9 +99,8 @@ class View(QWidget):
 					for tag in tags:
 						self.tagDict[imgName].append(tag)
 			file.close()								
-		
-		# print(self.tagDict)
 
+	# Displays all tags for currently selected image
 	def showTags(self):
 		self.hideTags()
 		self.tags = []
@@ -109,13 +108,10 @@ class View(QWidget):
 		currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
 
 		for i in range(len(self.tagDict[currTagKey])):
-			# newTag = 
 			self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
 			self.tags[i].setStyleSheet('background-color: #868e96;')
 			self.tags[i].move(padding, padding + padding*i)
 			self.tags[i].show()
-
-		# print(self.tags)
 
 	def hideTags(self):
 		for t in self.tags:
@@ -124,16 +120,17 @@ class View(QWidget):
 		self.tags = []
 
 
-	# add textbox, buttons, and tags
+	# Add textbox, buttons, and tags
 	def showTagComponents(self):
 		padding = self.model.getFullBorder()
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()
+
 		self.textBox.resize(windowWidth/3, padding)
 		self.textBox.move(padding, windowHeight - padding*2)
 		self.textBox.setStyleSheet('border: 1px solid #868e96;')
 			
-		# connect button to function on_click
+		# connect button to functions add/saveTags
 		self.addButton = QPushButton('Add Tag', self)
 		self.saveButton = QPushButton('Save All Tags', self)
 		self.addButton.clicked.connect(self.addTag)
@@ -141,7 +138,6 @@ class View(QWidget):
 		self.addButton.setStyleSheet('background-color: #868e96;')
 		self.saveButton.setStyleSheet('background-color: #868e96;')
 
-		# self.addButton.setStyleSheet("background-color: rgb(0, 128, 128)")
 		self.addButton.move(windowWidth/2, windowHeight - padding*2)
 		self.saveButton.move(windowWidth/1.5, windowHeight - padding*2)
 
@@ -154,13 +150,13 @@ class View(QWidget):
 		for t in self.tagComponents:
 			t.hide()
 
+	# Writes tags to files with .txt appended to the image name
+	# For example, if image filename is Test0.png then tag filename is Test0.png.txt
 	def saveTags(self):
 		for filename, taglist in self.tagDict.items():
-			# print('filename: ', filename, ' taglist: ', taglist)
 			if len(taglist) > 0:
 				file = open('tags/' + filename + '.txt', 'w')
 				for i, tag in enumerate(taglist):
-					# print(i, tag)
 					tag = tag.strip('\n')
 					if i != (len(taglist) - 1):
 						file.write(tag + '\n')
@@ -168,15 +164,13 @@ class View(QWidget):
 						file.write(tag)
 				file.close()
 
+	# Creates a tag for current image from textbox
 	def addTag(self):
-		textBoxStr = self.textBox.text()
-		
+		textBoxStr = self.textBox.text()	
 		if textBoxStr != "":
 			# add to list of tags for current image
 			currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
-			# print('Before adding: ', self.tagDict[currTagKey])
 			self.tagDict[currTagKey].append(textBoxStr)
-			# print('After adding: ', self.tagDict[currTagKey])
 
 		self.showTags()
 		self.textBox.setText('')
@@ -184,11 +178,12 @@ class View(QWidget):
 
 	# Type is 0=short, 1=medium, 2=long
 	def playSound(self, soundType = 0):
-		soundFile = 'long.wav'
 		if soundType == 0:
 			soundFile = 'short.wav'
 		elif soundType == 1:
 			soundFile = 'medium.wav'
+		elif soundType == 2:
+			soundFile = 'long.wav'
 
 		self.sound = QSoundEffect()
 		self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
@@ -196,7 +191,7 @@ class View(QWidget):
 		self.sound.play()	
 		
 	# Full screen mode on clicked label while in thumbnail mode
-	def mouseSel(self, label, testStr):
+	def mouseSel(self, label):
 		if self.model.getMode() == 0:
 			self.model.setMode(1)
 			self.model.setSelectedIndex(label.getPixIndex())
@@ -266,15 +261,12 @@ class View(QWidget):
 			self.addTag()
 
 		# print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
-
 		self.draw()
 
 	# Hide any visible contents on browser window
 	def clearBrowser(self):
 		for i in range(6):
-			# self.labels[i].setStyleSheet('border: none')
 			self.labels[i].hide()
 		self.hideTags()
 		# self.hideTagComponents()
-
 

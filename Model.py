@@ -17,7 +17,7 @@ from PyQt5.QtCore import *
 class Model(QLabel):
 
 	# when QLabel is clicked, emit a signal with an object param
-	clicked = pyqtSignal(object, str)
+	clicked = pyqtSignal(object)
 
 	def __init__(self, parent):
 		super().__init__(parent)
@@ -32,13 +32,14 @@ class Model(QLabel):
 		self.setFiles(files)
 		self.generatePixmaps(files)
 		
-
+	# Creates a list of Models (QLabels) of <quantity> length, connected to window (QWidget)
 	def generateLabels(self, window, quantity):
 		labels = []
 		for _ in range(quantity):
 			labels.append(Model(window))
 		return labels	
 
+	# Creates a 2D list of thumbnail & fullscreen pixmaps from a file list
 	def generatePixmaps(self, files):
 		thumbs = []
 		fulls = []
@@ -50,10 +51,6 @@ class Model(QLabel):
 
 		self.images.append(thumbs)
 		self.images.append(fulls)	
-
-	def getPixmap(self, mode, index):
-		# print(self.images[mode][index])
-		return self.images[mode][index]
 
 	# Scale image to width or height based on image orientation	& label dimensions
 	def resizeAndFrame(self, filename, w, h, b):		
@@ -67,9 +64,6 @@ class Model(QLabel):
 
 		return pixmap
 
-	def setFiles(self, files):
-		self.files = files
-
 	# Scales everything that is displayed according to window width
 	def setDimensions(self, windowWidth):
 		self.setWindowWidth	( int(windowWidth) )
@@ -82,9 +76,11 @@ class Model(QLabel):
 		self.setFullBorder	( int(self.windowWidth / (self.thumbWidth * 0.25)) )
 
 	def mousePressEvent(self, event):
-		# on click sends the object name to mouseSel()
-		self.clicked.emit(self, 'PIX INDEX: ' + str(self.getPixIndex))
+		# on click sends Model object to mouseSel()
+		self.clicked.emit(self)
 
+	def getPixmap(self, mode, index):
+		return self.images[mode][index]
 	def setPixIndex(self, i):
 		self.pixIndex = i
 	def getPixIndex(self):
@@ -141,6 +137,7 @@ class Model(QLabel):
 		return self.images
 	def getFiles(self):
 		return self.files
-
+	def setFiles(self, files):
+		self.files = files
 
 
