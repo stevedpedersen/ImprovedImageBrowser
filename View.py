@@ -1,4 +1,4 @@
-# File: ImageBrowser.py, Model.py, View.py
+ # File: ImageBrowser.py, Model.py, View.py
 # By: Steve Pedersen
 # Date: September 25, 2017
 # Usage: python3 ImageBrowser.py 
@@ -193,7 +193,7 @@ class View(QWidget):
 		self.sound = QSoundEffect()
 		self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
 		self.sound.setLoopCount(1)
-		# self.sound.play()	
+		self.sound.play()	
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label, testStr):
@@ -203,7 +203,6 @@ class View(QWidget):
 		self.setFocus()
 		self.draw()		
 	
-	# TODO: Bugfix
 	# Handles key events and responds according to current browser state
 	def keyPressEvent(self, event):
 		up, down, left, right = 16777235, 16777237, 16777234, 16777236
@@ -236,19 +235,15 @@ class View(QWidget):
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected - 1) % len(self.model.getFiles())
-			#print('Left move. New Index: '+str(newIndex))
-			if newIndex < leftmost or newIndex > selected:
+			if selected == leftmost:
 				self.model.setLeftmostIndex(leftmost - 5)
-			# elif ():
-			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Right - Thumbnail		
 		elif currentMode == thumb and event.key() == right:
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected + 1) % len(self.model.getFiles())
-			# TODO: bugfix - moving right when left > newIndex
-			if newIndex > ((leftmost + 4) % len(self.model.getFiles())):
+			if selected == ((leftmost + 4) % len(self.model.getFiles())):
 				self.model.setLeftmostIndex(leftmost + 5)
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
