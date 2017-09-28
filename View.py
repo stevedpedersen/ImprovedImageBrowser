@@ -101,7 +101,7 @@ class View(QWidget):
 
 	def showTags(self):
 		padding = self.model.getFullBorder()
-		currentTagKey = self.model.getFiles()[self.model.getPixIndex()]
+		currentTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
 		for i in range(len(self.tagDict[currentTagKey])):
 			self.tags.append(QPushButton(self.tagDict[currentTagKey][i], self))
 			self.tags[i].setStyleSheet('background-color: #868e96;')
