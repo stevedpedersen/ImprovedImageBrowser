@@ -20,9 +20,7 @@ class View(QWidget):
 		self.model = Model.Model(self)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, 6)
-		self.textbox = QLineEdit(self)	
-		self.tagComponents = []
-		self.tagComponents.append(self.textbox)
+		self.initTags()
 		self.initUI()
 		self.show()
 
@@ -63,6 +61,46 @@ class View(QWidget):
 			self.attachPixmap(selected, 5, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
 			self.showTagComponents()
 
+	# Assigns an image to one of the labels
+	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
+		#print(pindex, lindex, x, y, w, h, b, color)
+		mode = 0
+		if lindex == 5:
+			mode = 1
+
+		self.labels[lindex].setPixIndex(pindex)
+		self.labels[lindex].setPixmap(self.model.getPixmap(mode, pindex))
+		self.labels[lindex].setAlignment(Qt.AlignCenter)
+		self.labels[lindex].setGeometry(QRect(x, y, w, h))
+		self.labels[lindex].setStyleSheet('border: ' + str(b) + 'px solid '+ color)
+		self.labels[lindex].clicked.connect(self.mouseSel)
+		self.labels[lindex].show()
+
+	def initTags(self):
+		self.textbox = QLineEdit(self)	
+		self.tagComponents, self.tagList = [], {}
+		self.tagComponents.append(self.textbox)
+
+		imgFileNames = self.model.getFiles()
+		self.tagList = {key: val for key, val in enumerate(imgFileNames)}
+		# for i in range(len(imgFileNames)):
+		# 	self.tagList.append(i)
+		# # self.tagList.append(imgFileNames)
+
+		# # TODO: add this stuff into the Model so that each Model (QLabel)
+		# tagFileNames = os.listdir('tags')
+		# for f in tagFileNames:
+		# 	file = open('tags/' + f, 'r')
+		# 	fNameNoExt = f[0:f.find('.txt')]
+		# 	for imgName in imgFileNames:
+		# 		if imgName == fNameNoExt:
+		# 			for tag in file.readlines():
+		# 				index = imgFileNames.index(imgName)
+		# 				# self.tagList.append(list(range(len(imgFileNames))))
+		# 				self.tagList[index].append(tag)								
+		# 				# self.tagList[fNameNoExt].append(tag)			
+		print(self.tagList)
+
 	# add textbox, buttons, and tags
 	def showTagComponents(self):
 		padding = self.model.getFullBorder()
@@ -70,12 +108,15 @@ class View(QWidget):
 		windowHeight = self.model.getWindowHeight()
 		self.textbox.resize(windowWidth/3, padding)
 		self.textbox.move(padding, windowHeight - padding*2)
+		self.textbox.setStyleSheet('border: 1px solid #868e96;')
 			
 		# connect button to function on_click
 		self.addButton = QPushButton('Add Tag', self)
 		self.saveButton = QPushButton('Save All Tags', self)
-		self.addButton.clicked.connect(self.on_click)
-		self.saveButton.clicked.connect(self.on_click)
+		self.addButton.clicked.connect(self.addTag)
+		self.saveButton.clicked.connect(self.saveTags)
+		self.addButton.setStyleSheet('background-color: #868e96;')
+		self.saveButton.setStyleSheet('background-color: #868e96;')
 
 		# self.addButton.setStyleSheet("background-color: rgb(0, 128, 128)")
 		self.addButton.move(windowWidth/2, windowHeight - padding*2)
@@ -91,20 +132,8 @@ class View(QWidget):
 		for t in self.tagComponents:
 			t.hide()
 
-	# Assigns an image to one of the labels
-	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
-		#print(pindex, lindex, x, y, w, h, b, color)
-		mode = 0
-		if lindex == 5:
-			mode = 1
-
-		self.labels[lindex].setPixIndex(pindex)
-		self.labels[lindex].setPixmap(self.model.getPixmap(mode, pindex))
-		self.labels[lindex].setAlignment(Qt.AlignCenter)
-		self.labels[lindex].setGeometry(QRect(x, y, w, h))
-		self.labels[lindex].setStyleSheet('border: ' + str(b) + 'px solid '+ color)
-		self.labels[lindex].clicked.connect(self.mouseSel)
-		self.labels[lindex].show()
+	def saveTags(self):
+		print()
 
 	def addTag(self):
 		# get new tag from QLineEdit
@@ -141,20 +170,17 @@ class View(QWidget):
 		self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
 		self.sound.setLoopCount(1)
 		# self.sound.play()	
-
-	#@pyqtSlot()
-	def on_click(self):
-		textboxValue = self.textbox.text()
-		print(textboxValue)
-		self.textbox.setText("")
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label, testStr):
 		if self.model.getMode() == 0:
 			self.model.setMode(1)
 			self.model.setSelectedIndex(label.getPixIndex())
-
+		self.setFocus()
 		self.draw()		
+
+	def mouseClickEvent(self, event):
+		print('here')
 	
 	# TODO: Bugfix
 	# Handles key events and responds according to current browser state
@@ -219,7 +245,7 @@ class View(QWidget):
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
 
-		print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
+		# print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
 
 		self.draw()
 
