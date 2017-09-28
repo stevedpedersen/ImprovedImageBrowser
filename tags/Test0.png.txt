@@ -1,3 +1,2 @@
-One
-Two
-Three
+image 0
+zero

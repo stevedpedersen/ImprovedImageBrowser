@@ -27,7 +27,7 @@ class View(QWidget):
 	def initUI(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
-		self.setStyleSheet('background-color: #FFFFF8;')
+		self.setStyleSheet('background-color: #FFFFFF;')
 
 		self.draw() 
 		self.show()
@@ -94,29 +94,35 @@ class View(QWidget):
 			fNameNoExt = f[0:f.find('.txt')]
 			for imgName in imgFileNames:
 				if imgName == fNameNoExt:
-					for tags in file.readlines():
-						self.tagDict[imgName].append(tags)								
+					tags = file.readlines()
+					tags = [x.strip() for x in tags] 
+					for tag in tags:
+						self.tagDict[imgName].append(tag)
+			file.close()								
 		
 		# print(self.tagDict)
 
 	def showTags(self):
+		self.hideTags()
 		self.tags = []
 		padding = self.model.getFullBorder()
 		currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
-		# print('self.tags before: ', self.tags)
-		# print('CURR TAG KEY: ', currTagKey)
+
 		for i in range(len(self.tagDict[currTagKey])):
 			# newTag = 
 			self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
 			self.tags[i].setStyleSheet('background-color: #868e96;')
 			self.tags[i].move(padding, padding + padding*i)
 			self.tags[i].show()
-		# print('self.tags after: ', self.tags)
+
+		# print(self.tags)
 
 	def hideTags(self):
 		for t in self.tags:
 			t.hide()
+			t.setVisible(False)
 		self.tags = []
+
 
 	# add textbox, buttons, and tags
 	def showTagComponents(self):
@@ -144,13 +150,23 @@ class View(QWidget):
 		for t in self.tagComponents:
 			t.show()
 
-		# print()
 	def hideTagComponents(self):
 		for t in self.tagComponents:
 			t.hide()
 
 	def saveTags(self):
-		print()
+		for filename, taglist in self.tagDict.items():
+			# print('filename: ', filename, ' taglist: ', taglist)
+			if len(taglist) > 0:
+				file = open('tags/' + filename + '.txt', 'w')
+				for i, tag in enumerate(taglist):
+					# print(i, tag)
+					tag = tag.strip('\n')
+					if i != (len(taglist) - 1):
+						file.write(tag + '\n')
+					else:
+						file.write(tag)
+				file.close()
 
 	def addTag(self):
 		textBoxStr = self.textBox.text()
@@ -161,21 +177,10 @@ class View(QWidget):
 			# print('Before adding: ', self.tagDict[currTagKey])
 			self.tagDict[currTagKey].append(textBoxStr)
 			# print('After adding: ', self.tagDict[currTagKey])
-		
+
 		self.showTags()
 		self.textBox.setText('')
 		self.setFocus()
-
-	def updateCurrentTags(self, mtl):
-		ss = 'something tag: '
-		for s in mtl:
-			ss = ss + ' ' + s
-		print('Tag list: ', ss)
-		self.currentTags.setText(ss)
-		#self.curentTags.show()
-
-	def updateCurrentTagsButtons(self, mtl):
-		print(mtl)
 
 	# Type is 0=short, 1=medium, 2=long
 	def playSound(self, soundType = 0):
@@ -197,9 +202,6 @@ class View(QWidget):
 			self.model.setSelectedIndex(label.getPixIndex())
 		self.setFocus()
 		self.draw()		
-
-	def mouseClickEvent(self, event):
-		print('here')
 	
 	# TODO: Bugfix
 	# Handles key events and responds according to current browser state
@@ -208,8 +210,9 @@ class View(QWidget):
 		scrollL, scrollR = 44, 46
 		thumb, full = 0, 1
 		short, medium, big = 0, 1, 2
-		tab, esc = 16777217, 16777216
+		tab, esc, enter = 16777217, 16777216, 16777220
 		currentMode = self.model.getMode()
+		# print(event.key())
 
 		# Enter Full Screen Mode
 		if currentMode == thumb and event.key() == up:
@@ -263,6 +266,8 @@ class View(QWidget):
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
+		elif currentMode == full and event.key() == enter:
+			self.addTag()
 
 		# print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
 
