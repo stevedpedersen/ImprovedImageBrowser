@@ -237,6 +237,7 @@ class View(QWidget):
 			newIndex = (selected - 1) % len(self.model.getFiles())
 			if selected == leftmost:
 				self.model.setLeftmostIndex(leftmost - 5)
+			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Right - Thumbnail		
 		elif currentMode == thumb and event.key() == right:
