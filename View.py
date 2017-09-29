@@ -14,22 +14,26 @@ from PyQt5.QtMultimedia import QSoundEffect
 
 class View(QWidget):
 
+	buttonStyle = 'background-color: #d3d3d3; padding: 5px; border: 1px solid #000; border-radius: 3px;'
+
 	def __init__(self, windowWidth, files):
 		super().__init__()
 		self.title = 'Project 2.5 - Improved Image Browser'
 		self.model = Model.Model(self)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, 6)
-		self.initTags()
 		self.initUI()
 		self.show()
 
 	def initUI(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
-		self.setStyleSheet('background-color: #FFFFFF;')
+		self.setStyleSheet('background-color: #FFFFFF;')	
+		self.showSearchComponents()
+		self.initTags()
 		self.draw() 
 		self.show()
+		self.setFocus()
 
 	# Attach images to labels in thumbnail or fullscreen mode
 	def draw(self):	
@@ -53,6 +57,7 @@ class View(QWidget):
 				self.attachPixmap(thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color)
 			self.hideTagComponents()
 			self.hideTags()
+			self.showSearchComponents()
 
 		# Full Screen Mode		
 		elif mode == 1:
@@ -61,6 +66,7 @@ class View(QWidget):
 			self.attachPixmap(selected, 5, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
 			self.showTagComponents()
 			self.showTags()
+			# self.hideSearchComponents()
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
@@ -77,11 +83,42 @@ class View(QWidget):
 		self.labels[lindex].clicked.connect(self.mouseSel)
 		self.labels[lindex].show()
 
+	def showSearchComponents(self):
+		padding = self.model.getFullBorder()
+		windowWidth = self.model.getWindowWidth()
+		windowHeight = self.model.getWindowHeight()	
+
+		self.searchComponents = []
+		self.searchTextBox = QLineEdit(self)	
+		self.searchTextBox.resize(windowWidth/2.5, padding*1.5)
+		self.searchTextBox.move(padding, windowHeight - padding*2)
+		self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
+		self.searchTextBox.setPlaceholderText('Search Flickr...')
+
+		# connect button to functions search()
+		self.searchButton = QPushButton('Search', self)
+		self.searchButton.clicked.connect(self.search)
+		self.searchButton.setStyleSheet(View.buttonStyle)
+		self.searchButton.move(windowWidth/2, windowHeight - padding*1.7)
+
+		self.searchComponents.append(self.searchTextBox)
+		self.searchComponents.append(self.searchButton)
+		for t in self.searchComponents:
+			t.show()
+
+	def hideSearchComponents(self):
+		for t in self.searchComponents:
+			t.hide()
+			t.setVisible(False)
+
+	def search(self):
+		print(self.searchTextBox.text())
+
 	# Pre-load all tags for each image into a dictionary
 	def initTags(self):
-		self.textBox = QLineEdit(self)	
+		self.tagTextBox = QLineEdit(self)	
 		self.tagComponents, self.tagDict = [], {}
-		self.tagComponents.append(self.textBox)
+		self.tagComponents.append(self.tagTextBox)
 		self.tags = [] # QPushButton 'tags' List
 
 		# create a dict { imgFileName1: [tag1, tag2], ... }
@@ -109,8 +146,8 @@ class View(QWidget):
 
 		for i in range(len(self.tagDict[currTagKey])):
 			self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
-			self.tags[i].setStyleSheet('background-color: #868e96;')
-			self.tags[i].move(padding, padding + padding*i)
+			self.tags[i].setStyleSheet(View.buttonStyle)
+			self.tags[i].move(padding/4, padding + padding*i*1.4)
 			self.tags[i].show()
 
 	def hideTags(self):
@@ -126,20 +163,21 @@ class View(QWidget):
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()
 
-		self.textBox.resize(windowWidth/3, padding)
-		self.textBox.move(padding, windowHeight - padding*2)
-		self.textBox.setStyleSheet('border: 1px solid #868e96;')
-			
+		self.tagTextBox.resize(windowWidth/3, padding*1.5)
+		self.tagTextBox.move(padding, windowHeight - padding*2)
+		self.tagTextBox.setStyleSheet('border: 1px solid #868e96;')
+		self.tagTextBox.setPlaceholderText('Enter tag text...')
+
 		# connect button to functions add/saveTags
 		self.addButton = QPushButton('Add Tag', self)
 		self.saveButton = QPushButton('Save All Tags', self)
 		self.addButton.clicked.connect(self.addTag)
 		self.saveButton.clicked.connect(self.saveTags)
-		self.addButton.setStyleSheet('background-color: #868e96;')
-		self.saveButton.setStyleSheet('background-color: #868e96;')
+		self.addButton.setStyleSheet(View.buttonStyle)
+		self.saveButton.setStyleSheet(View.buttonStyle)
 
-		self.addButton.move(windowWidth/2, windowHeight - padding*2)
-		self.saveButton.move(windowWidth/1.5, windowHeight - padding*2)
+		self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
+		self.saveButton.move(windowWidth/1.5, windowHeight - padding*1.7)
 
 		self.tagComponents.append(self.addButton)
 		self.tagComponents.append(self.saveButton)
@@ -166,14 +204,14 @@ class View(QWidget):
 
 	# Creates a tag for current image from textbox
 	def addTag(self):
-		textBoxStr = self.textBox.text()	
+		textBoxStr = self.tagTextBox.text()	
 		if textBoxStr != "":
 			# add to list of tags for current image
 			currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
 			self.tagDict[currTagKey].append(textBoxStr)
 
 		self.showTags()
-		self.textBox.setText('')
+		self.tagTextBox.setText('')
 		self.setFocus()
 
 	# Type is 0=short, 1=medium, 2=long
@@ -268,5 +306,6 @@ class View(QWidget):
 		for i in range(6):
 			self.labels[i].hide()
 		self.hideTags()
+		self.hideSearchComponents()
 		# self.hideTagComponents()
 
