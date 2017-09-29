@@ -9,8 +9,9 @@
 
 
 import os, sys
+from urllib.request import urlopen
 from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import *
 		
 
@@ -26,6 +27,7 @@ class Model(QLabel):
 		self.pixIndex = 0
 		self.mode = 0
 		self.images = []
+		self.imageCount = 0
 
 	def initModel(self, windowWidth, files):
 		self.setDimensions(windowWidth)
@@ -40,7 +42,7 @@ class Model(QLabel):
 		return labels	
 
 	# Creates a 2D list of thumbnail & fullscreen pixmaps from a file list
-	def generatePixmaps(self, files):
+	def generatePixmaps(self, files, remoteSrc = False):
 		thumbs = []
 		fulls = []
 		for f in files:		
@@ -48,13 +50,39 @@ class Model(QLabel):
 			full = self.resizeAndFrame('data/' + f, self.fullWidth, self.fullHeight, self.fullBorder)
 			thumbs.append(thumb)
 			fulls.append(full)
+			self.imageCount += 1
 
 		self.images.append(thumbs)
 		self.images.append(fulls)	
 
+	# Fetch images from the web from their URL, create Pixmaps, then add to images 2D list
+	def addImages(self, urls):
+		fileNames = []
+		for url in urls:		
+			k = url.rfind("/")
+			imgFileName = url[k+1:]	
+			fileNames.append(imgFileName)
+
+			response = urlopen(url)
+			pic = response.read()
+
+			thumb = self.resizeAndFrame(pic, self.thumbWidth, self.thumbHeight, self.thumbBorder)
+			full = self.resizeAndFrame(pic, self.fullWidth, self.fullHeight, self.fullBorder)
+
+			self.images[0].append(thumb)
+			self.images[1].append(full)
+			self.imageCount += 1
+		
+		return fileNames
+
 	# Scale image to width or height based on image orientation	& label dimensions
-	def resizeAndFrame(self, filename, w, h, b):		
-		pixmap = QPixmap(filename)		
+	def resizeAndFrame(self, file, w, h, b):	
+		pixmap = QPixmap()	
+		if isinstance(file, str):
+			pixmap = QPixmap(file)
+		else:
+			pixmap.loadFromData(file)
+		
 		if pixmap.width() > pixmap.height():
 			pixmap = pixmap.scaledToWidth(w - 2*b)
 			if pixmap.height() > (h - 2*b):
@@ -124,11 +152,11 @@ class Model(QLabel):
 	def getSelectedIndex(self):
 		return self.selectedIndex
 	def setSelectedIndex(self, index):
-		self.selectedIndex = index % len(self.getFiles())		
+		self.selectedIndex = index % self.getImageCount()		
 	def getLeftmostIndex(self):
 		return self.leftmostIndex
 	def setLeftmostIndex(self, index):
-		self.leftmostIndex = index % len(self.getFiles())
+		self.leftmostIndex = index % self.getImageCount()
 	def getMode(self):
 		return self.mode
 	def setMode(self, mode):
@@ -139,5 +167,9 @@ class Model(QLabel):
 		return self.files
 	def setFiles(self, files):
 		self.files = files
-
+	def addFiles(self, files):
+		for file in files:
+			self.files.append(file)
+	def getImageCount(self):
+		return len(self.images[0])
 

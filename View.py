@@ -14,11 +14,13 @@ from PyQt5.QtMultimedia import QSoundEffect
 
 class View(QWidget):
 
-	buttonStyle = 'background-color: #d3d3d3; padding: 5px; border: 1px solid #000; border-radius: 3px;'
+	WINDOW_TITLE = 'Image Browser'
+	WINDOW_STYLE = 'background-color: #FFFFFF;'
+	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 5px; border: 1px solid #000; border-radius: 3px; font-weight: bold;'
 
 	def __init__(self, windowWidth, files):
 		super().__init__()
-		self.title = 'Project 2.5 - Improved Image Browser'
+		self.title = View.WINDOW_TITLE
 		self.model = Model.Model(self)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, 6)
@@ -28,7 +30,7 @@ class View(QWidget):
 	def initUI(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
-		self.setStyleSheet('background-color: #FFFFFF;')	
+		self.setStyleSheet(View.WINDOW_STYLE)	
 		self.showSearchComponents()
 		self.initTags()
 		self.draw() 
@@ -49,7 +51,7 @@ class View(QWidget):
 			for i in range(5):
 				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*5)/2) + i*self.model.getThumbWidth())
 				# Center the highlighted thumbnail when returning from full screen mode
-				thumb = (leftmost + i) % len(self.model.getFiles())				
+				thumb = (leftmost + i) % self.model.getImageCount()				
 				color = 'green'
 				if thumb == selected:
 					color = 'red'	
@@ -90,7 +92,7 @@ class View(QWidget):
 
 		self.searchComponents = []
 		self.searchTextBox = QLineEdit(self)	
-		self.searchTextBox.resize(windowWidth/2.5, padding*1.5)
+		self.searchTextBox.resize(windowWidth/3, padding*1.5)
 		self.searchTextBox.move(padding, windowHeight - padding*2)
 		self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
 		self.searchTextBox.setPlaceholderText('Search Flickr...')
@@ -98,7 +100,7 @@ class View(QWidget):
 		# connect button to functions search()
 		self.searchButton = QPushButton('Search', self)
 		self.searchButton.clicked.connect(self.search)
-		self.searchButton.setStyleSheet(View.buttonStyle)
+		self.searchButton.setStyleSheet(View.BUTTON_STYLE)
 		self.searchButton.move(windowWidth/2, windowHeight - padding*1.7)
 
 		self.searchComponents.append(self.searchTextBox)
@@ -109,10 +111,24 @@ class View(QWidget):
 	def hideSearchComponents(self):
 		for t in self.searchComponents:
 			t.hide()
-			t.setVisible(False)
+			# t.setVisible(False)
 
 	def search(self):
-		print(self.searchTextBox.text())
+		# print(self.searchTextBox.text())
+		test = ['http://www.eatwisconsincheese.com/images/cheese/Limburger-h.jpg',
+			'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Hot_dog_with_mustard.png/1200px-Hot_dog_with_mustard.png',
+			'https://aff5fa4925746bf9c161-fb36f18ca122a30f6899af8eef8fa39b.ssl.cf5.rackcdn.com/images/Masthead_mario.17345b1513ac044897cfc243542899dce541e8dc.9afde10b.png']
+		fileNames = self.model.addImages(test)
+		self.addToTagDict(fileNames)
+		self.model.addFiles(fileNames)
+		self.draw()
+		# self.model.setSelectedIndex(0)
+		self.initTags()
+		# self.showTags()
+
+	def addToTagDict(self, items):
+		for item in items:
+			self.tagDict.update( { item: [] } )	
 
 	# Pre-load all tags for each image into a dictionary
 	def initTags(self):
@@ -142,11 +158,12 @@ class View(QWidget):
 		self.hideTags()
 		self.tags = []
 		padding = self.model.getFullBorder()
+		# print(self.model.getFiles())
 		currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
 
 		for i in range(len(self.tagDict[currTagKey])):
 			self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
-			self.tags[i].setStyleSheet(View.buttonStyle)
+			self.tags[i].setStyleSheet(View.BUTTON_STYLE)
 			self.tags[i].move(padding/4, padding + padding*i*1.4)
 			self.tags[i].show()
 
@@ -173,8 +190,8 @@ class View(QWidget):
 		self.saveButton = QPushButton('Save All Tags', self)
 		self.addButton.clicked.connect(self.addTag)
 		self.saveButton.clicked.connect(self.saveTags)
-		self.addButton.setStyleSheet(View.buttonStyle)
-		self.saveButton.setStyleSheet(View.buttonStyle)
+		self.addButton.setStyleSheet(View.BUTTON_STYLE)
+		self.saveButton.setStyleSheet(View.BUTTON_STYLE)
 
 		self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
 		self.saveButton.move(windowWidth/1.5, windowHeight - padding*1.7)
@@ -267,7 +284,7 @@ class View(QWidget):
 		elif currentMode == thumb and event.key() == left:
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
-			newIndex = (selected - 1) % len(self.model.getFiles())
+			newIndex = (selected - 1) % self.model.getImageCount()
 			if selected == leftmost:
 				self.model.setLeftmostIndex(leftmost - 5)
 			self.model.setSelectedIndex(newIndex)
@@ -276,22 +293,22 @@ class View(QWidget):
 		elif currentMode == thumb and event.key() == right:
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
-			newIndex = (selected + 1) % len(self.model.getFiles())
-			if selected == ((leftmost + 4) % len(self.model.getFiles())):
+			newIndex = (selected + 1) % self.model.getImageCount()
+			if selected == ((leftmost + 4) % self.model.getImageCount()):
 				self.model.setLeftmostIndex(leftmost + 5)
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Next set Left - Thumbnail		
 		elif currentMode == thumb and event.key() == scrollL:
 			selected = self.model.getSelectedIndex()
-			newIndex = (selected - 5) % len(self.model.getFiles())
+			newIndex = (selected - 5) % self.model.getImageCount()
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
 		# Next set Right - Thumbnail		
 		elif currentMode == thumb and event.key() == scrollR:
 			selected = self.model.getSelectedIndex()
-			newIndex = (selected + 5) % len(self.model.getFiles())
+			newIndex = (selected + 5) % self.model.getImageCount()
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
