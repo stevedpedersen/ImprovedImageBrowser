@@ -4,8 +4,8 @@
 # Usage: python3 ImageBrowser.py 
 # System: OS X
 # Dependencies: Python3, PyQt5
-# Description: Creates an image browser that displays images as 
-# 	thumbnails and fullscreen. Navigation with keys and mouse.
+# Description: Creates a Model to keep track of current state of data in View
+#		Also, displays images, handles user events, tag actions, etc..
 
 import Model, os, sys
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QAction, QLineEdit
@@ -15,15 +15,20 @@ from PyQt5.QtMultimedia import QSoundEffect
 class View(QWidget):
 
 	WINDOW_TITLE = 'Image Browser'
+	THUMB_QTY = 5
 	WINDOW_STYLE = 'background-color: #FFFFFF;'
-	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 5px; border: 1px solid #000; border-radius: 3px; font-weight: bold;'
+	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 8px 20px; font-weight: bold;'
+	TEST_URLS = ['http://www.eatwisconsincheese.com/images/cheese/Limburger-h.jpg',
+		'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Hot_dog_with_mustard.png/1200px-Hot_dog_with_mustard.png',
+		'https://aff5fa4925746bf9c161-fb36f18ca122a30f6899af8eef8fa39b.ssl.cf5.rackcdn.com/images/Masthead_mario.17345b1513ac044897cfc243542899dce541e8dc.9afde10b.png']
 
 	def __init__(self, windowWidth, files):
 		super().__init__()
 		self.title = View.WINDOW_TITLE
 		self.model = Model.Model(self)
+		self.model.setThumbQty(View.THUMB_QTY)
 		self.model.initModel(windowWidth, files)
-		self.labels = self.model.generateLabels(self, 6)
+		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
 		self.initUI()
 		self.show()
 
@@ -48,8 +53,9 @@ class View(QWidget):
 		# Thumbnail Mode
 		if mode == 0:	
 			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 2) 
-			for i in range(5):
-				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*5)/2) + i*self.model.getThumbWidth())
+			y = y if y < self.model.getWindowHeight() - 150 else self.model.getWindowHeight() - 150
+			for i in range(View.THUMB_QTY):
+				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
 				# Center the highlighted thumbnail when returning from full screen mode
 				thumb = (leftmost + i) % self.model.getImageCount()				
 				color = 'green'
@@ -65,16 +71,15 @@ class View(QWidget):
 		elif mode == 1:
 			x = (self.model.getWindowWidth() - self.model.getFullWidth()) / 2
 			y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
-			self.attachPixmap(selected, 5, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
+			self.attachPixmap(selected, View.THUMB_QTY, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
 			self.showTagComponents()
 			self.showTags()
-			# self.hideSearchComponents()
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
 		#print(pindex, lindex, x, y, w, h, b, color)
 		mode = 0
-		if lindex == 5:
+		if lindex == View.THUMB_QTY:
 			mode = 1
 
 		self.labels[lindex].setPixIndex(pindex)
@@ -86,7 +91,7 @@ class View(QWidget):
 		self.labels[lindex].show()
 
 	def showSearchComponents(self):
-		padding = self.model.getFullBorder()
+		padding = 30
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()	
 
@@ -113,18 +118,14 @@ class View(QWidget):
 			t.hide()
 			# t.setVisible(False)
 
+	# TODO: Make this actually use search query from textbox to ping the Flickr API
 	def search(self):
 		# print(self.searchTextBox.text())
-		test = ['http://www.eatwisconsincheese.com/images/cheese/Limburger-h.jpg',
-			'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Hot_dog_with_mustard.png/1200px-Hot_dog_with_mustard.png',
-			'https://aff5fa4925746bf9c161-fb36f18ca122a30f6899af8eef8fa39b.ssl.cf5.rackcdn.com/images/Masthead_mario.17345b1513ac044897cfc243542899dce541e8dc.9afde10b.png']
-		fileNames = self.model.addImages(test)
+		fileNames = self.model.addImages(View.TEST_URLS)
 		self.addToTagDict(fileNames)
 		self.model.addFiles(fileNames)
 		self.draw()
-		# self.model.setSelectedIndex(0)
 		self.initTags()
-		# self.showTags()
 
 	def addToTagDict(self, items):
 		for item in items:
@@ -176,7 +177,7 @@ class View(QWidget):
 
 	# Add textbox, buttons, and tags
 	def showTagComponents(self):
-		padding = self.model.getFullBorder()
+		padding = 30
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()
 
@@ -286,7 +287,7 @@ class View(QWidget):
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected - 1) % self.model.getImageCount()
 			if selected == leftmost:
-				self.model.setLeftmostIndex(leftmost - 5)
+				self.model.setLeftmostIndex(leftmost - View.THUMB_QTY)
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Right - Thumbnail		
@@ -294,21 +295,21 @@ class View(QWidget):
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected + 1) % self.model.getImageCount()
-			if selected == ((leftmost + 4) % self.model.getImageCount()):
-				self.model.setLeftmostIndex(leftmost + 5)
+			if selected == ((leftmost + View.THUMB_QTY - 1) % self.model.getImageCount()):
+				self.model.setLeftmostIndex(leftmost + View.THUMB_QTY)
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Next set Left - Thumbnail		
 		elif currentMode == thumb and event.key() == scrollL:
 			selected = self.model.getSelectedIndex()
-			newIndex = (selected - 5) % self.model.getImageCount()
+			newIndex = (selected - View.THUMB_QTY) % self.model.getImageCount()
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
 		# Next set Right - Thumbnail		
 		elif currentMode == thumb and event.key() == scrollR:
 			selected = self.model.getSelectedIndex()
-			newIndex = (selected + 5) % self.model.getImageCount()
+			newIndex = (selected + View.THUMB_QTY) % self.model.getImageCount()
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
@@ -320,7 +321,7 @@ class View(QWidget):
 
 	# Hide any visible contents on browser window
 	def clearBrowser(self):
-		for i in range(6):
+		for i in range(View.THUMB_QTY + 1):
 			self.labels[i].hide()
 		self.hideTags()
 		self.hideSearchComponents()

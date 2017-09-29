@@ -1,11 +1,11 @@
-# File: ImageBrowser.py, Model.py, View.py
+# File: Model.py
 # By: Steve Pedersen
-# Date: September 25, 2017
+# Date: October 1, 2017
 # Usage: python3 ImageBrowser.py 
 # System: OS X
 # Dependencies: Python3, PyQt5
-# Description: Creates an image browser that displays images as 
-# 	thumbnails and fullscreen. Navigation with keys and mouse.
+# Description: Model class. Can be used to generate QLabels and to
+#		keep track of data state.
 
 
 import os, sys
@@ -28,6 +28,7 @@ class Model(QLabel):
 		self.mode = 0
 		self.images = []
 		self.imageCount = 0
+		self.thumbQty = 5
 
 	def initModel(self, windowWidth, files):
 		self.setDimensions(windowWidth)
@@ -96,7 +97,7 @@ class Model(QLabel):
 	def setDimensions(self, windowWidth):
 		self.setWindowWidth	( int(windowWidth) )
 		self.setWindowHeight( int(3 * self.windowWidth / 4) )
-		self.setThumbWidth	( int(self.windowWidth / 6) )
+		self.setThumbWidth	( int(self.windowWidth / (self.getThumbQty() + 1)) )
 		self.setThumbHeight	( int(3 * self.thumbWidth / 4) )
 		self.setThumbBorder	( int(self.windowWidth / (self.thumbWidth * 0.75)) )
 		self.setFullWidth	( int(self.windowWidth * 0.7) )
@@ -106,6 +107,11 @@ class Model(QLabel):
 	def mousePressEvent(self, event):
 		# on click sends Model object to mouseSel()
 		self.clicked.emit(self)
+
+	def getThumbQty(self):
+		return self.thumbQty
+	def setThumbQty(self, qty):
+		self.thumbQty = qty;
 
 	def getPixmap(self, mode, index):
 		return self.images[mode][index]
@@ -134,7 +140,7 @@ class Model(QLabel):
 	def getThumbBorder(self):
 		return self.thumbBorder
 	def setThumbBorder(self, b):
-		self.thumbBorder = b
+		self.thumbBorder = b if b < 10 else 5
 	
 	def getFullWidth(self):
 		return self.fullWidth
@@ -147,7 +153,7 @@ class Model(QLabel):
 	def getFullBorder(self):
 		return self.fullBorder
 	def setFullBorder(self, b):
-		self.fullBorder = b
+		self.fullBorder = b if b < 26 else 25
 
 	def getSelectedIndex(self):
 		return self.selectedIndex
@@ -171,5 +177,5 @@ class Model(QLabel):
 		for file in files:
 			self.files.append(file)
 	def getImageCount(self):
-		return len(self.images[0])
+		return self.imageCount
 
