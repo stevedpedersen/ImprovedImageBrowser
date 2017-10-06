@@ -3,11 +3,11 @@
 # Date: September 25, 2017
 # Usage: python3 ImageBrowser.py 
 # System: OS X
-# Dependencies: Python3, PyQt5
+# Dependencies: Python3, PyQt5, requests (pip3 install requests)
 # Description: Creates a Model to keep track of current state of data in View
 #		Also, displays images, handles user events, tag actions, etc..
 
-import Model, os, sys
+import Model, os, sys, json, requests
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QAction, QLineEdit
 from PyQt5.QtCore import *
 from PyQt5.QtMultimedia import QSoundEffect
@@ -18,6 +18,7 @@ class View(QWidget):
 	THUMB_QTY = 5
 	WINDOW_STYLE = 'background-color: #FFFFFF;'
 	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 8px 20px; font-weight: bold;'
+	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1'
 	TEST_URLS = ['http://www.eatwisconsincheese.com/images/cheese/Limburger-h.jpg',
 		'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Hot_dog_with_mustard.png/1200px-Hot_dog_with_mustard.png',
 		'https://aff5fa4925746bf9c161-fb36f18ca122a30f6899af8eef8fa39b.ssl.cf5.rackcdn.com/images/Masthead_mario.17345b1513ac044897cfc243542899dce541e8dc.9afde10b.png']
@@ -29,6 +30,7 @@ class View(QWidget):
 		self.model.setThumbQty(View.THUMB_QTY)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
+		self.api_key = '56cd9cd52b1e025a3684840a4176cf88'
 		self.initUI()
 		self.show()
 
@@ -119,23 +121,26 @@ class View(QWidget):
 		self.testButton.clicked.connect(self.test)
 		self.testButton.setStyleSheet(View.BUTTON_STYLE)
 		self.testButton.resize(padding*2.6, padding)
-		self.testButton.move(padding, windowHeight - padding*1.8)
+		self.testButton.move(padding, windowHeight - padding*2)
 		self.saveAllButton = QPushButton('Save', self)
 		self.saveAllButton.clicked.connect(self.saveAll)
 		self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
 		self.saveAllButton.resize(padding*2.6, padding)
-		self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*1.8)
+		self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*2)
 		self.exitButton = QPushButton('Exit', self)
 		self.exitButton.clicked.connect(self.exit)
 		self.exitButton.setStyleSheet(View.BUTTON_STYLE)
 		self.exitButton.resize(padding*2.6, padding)
-		self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*1.8)
+		self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*2)
 		self.deleteButton = QPushButton('Delete', self)
 		self.deleteButton.clicked.connect(self.delete)
 		self.deleteButton.setStyleSheet(View.BUTTON_STYLE)
 		self.deleteButton.resize(padding*2.6, padding)
-		self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*1.8)
+		self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*2)
 
+		self.statusText = QLabel(self)
+		self.statusText.resize(windowWidth-padding*2, padding)
+		self.statusText.move(padding, windowHeight - padding)		
 
 		self.thumbModeComponents.append(self.searchTextBox)
 		self.thumbModeComponents.append(self.searchButton)
@@ -145,11 +150,35 @@ class View(QWidget):
 		self.thumbModeComponents.append(self.saveAllButton)
 		self.thumbModeComponents.append(self.exitButton)
 		self.thumbModeComponents.append(self.deleteButton)
+		self.thumbModeComponents.append(self.statusText)
 		for t in self.thumbModeComponents:
 			t.show()
 
+	# NOTE: requires requests module to be installed
+	# https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}_o.(jpg|gif|png)
 	def test(self):
-		print()
+		query = self.searchTextBox.text()
+		query = query.replace(' ', '%20')
+		url = self.FLICKR_URL + '&per_page=1&api_key='+self.api_key + '&tags='+query
+		response = requests.get(url).json()
+		if (response['stat'] == 'ok'):
+			pj = response['photos']['photo'][0]
+			photoUrl = 'https://farm'+str(pj['farm'])+'.staticflickr.com/'+str(pj['server'])+'/'+str(pj['id'])+'_'+str(pj['secret'])+'.jpg'
+			fileNames = self.model.requestImages([photoUrl])
+			self.addToTagDict(fileNames)
+			self.model.addFiles(fileNames)					
+		else:
+			self.statusText.setText('No results found.')
+
+		
+		# response = urlopen(url)
+		# pic = response.read()	
+			
+		# pic = response.read()
+
+		# self.draw()
+		# self.initTags()		
+		# print()
 	def saveAll(self):
 		print()
 	def exit(self):
@@ -165,7 +194,7 @@ class View(QWidget):
 	# TODO: Make this actually use search query from textbox to ping the Flickr API
 	def search(self):
 		# print(self.searchTextBox.text())
-		fileNames = self.model.addImages(View.TEST_URLS)
+		fileNames = self.model.requestImages(View.TEST_URLS)
 		self.addToTagDict(fileNames)
 		self.model.addFiles(fileNames)
 		self.draw()

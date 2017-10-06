@@ -13,6 +13,7 @@ from urllib.request import urlopen
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import *
+from PyQt5 import QtNetwork, QtCore
 		
 
 class Model(QLabel):
@@ -29,6 +30,7 @@ class Model(QLabel):
 		self.images = []
 		self.imageCount = 0
 		self.thumbQty = 5
+		self.view = parent
 
 	def initModel(self, windowWidth, files):
 		self.setDimensions(windowWidth)
@@ -57,24 +59,48 @@ class Model(QLabel):
 		self.images.append(fulls)	
 
 	# Fetch images from the web from their URL, create Pixmaps, then add to images 2D list
-	def addImages(self, urls):
+	def requestImages(self, urls):
+		self.nam = QtNetwork.QNetworkAccessManager()
+		self.nam.finished.connect(self.handleImageResponse)		
 		fileNames = []
 		for url in urls:		
 			k = url.rfind("/")
 			imgFileName = url[k+1:]	
 			fileNames.append(imgFileName)
 
-			response = urlopen(url)
-			pic = response.read()
+			req = QtNetwork.QNetworkRequest(QtCore.QUrl(url))
+			self.nam.get(req)
 
-			thumb = self.resizeAndFrame(pic, self.thumbWidth, self.thumbHeight, self.thumbBorder)
-			full = self.resizeAndFrame(pic, self.fullWidth, self.fullHeight, self.fullBorder)
+			# response = urlopen(url)
+			# pic = response.read()
+
+			# thumb = self.resizeAndFrame(pic, self.thumbWidth, self.thumbHeight, self.thumbBorder)
+			# full = self.resizeAndFrame(pic, self.fullWidth, self.fullHeight, self.fullBorder)
+
+			# self.images[0].append(thumb)
+			# self.images[1].append(full)
+			# self.imageCount += 1
+		
+		return fileNames
+
+	def handleImageResponse(self, reply):
+		err = reply.error()
+
+		if err == QtNetwork.QNetworkReply.NoError:
+			url_data = reply.readAll()
+			thumb = self.resizeAndFrame(url_data, self.thumbWidth, self.thumbHeight, self.thumbBorder)
+			full = self.resizeAndFrame(url_data, self.fullWidth, self.fullHeight, self.fullBorder)
 
 			self.images[0].append(thumb)
 			self.images[1].append(full)
+			print(self.imageCount)
 			self.imageCount += 1
-		
-		return fileNames
+			self.setSelectedIndex(self.imageCount-1)
+			self.setLeftmostIndex(self.imageCount-1)
+			
+			self.view.draw()
+			self.view.initTags()
+			self.view.statusText.setText('Success!')
 
 	# Scale image to width or height based on image orientation	& label dimensions
 	def resizeAndFrame(self, file, w, h, b):	
