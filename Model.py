@@ -31,6 +31,8 @@ class Model(QLabel):
 		self.imageCount = 0
 		self.thumbQty = 5
 		self.view = parent
+		self.searchQty = 0
+		self.searchCount = 0
 
 	def initModel(self, windowWidth, files):
 		self.setDimensions(windowWidth)
@@ -60,6 +62,7 @@ class Model(QLabel):
 
 	# Fetch images from the web from their URL, create Pixmaps, then add to images 2D list
 	def requestImages(self, urls):
+		self.searchQty = len(urls)
 		self.nam = QtNetwork.QNetworkAccessManager()
 		self.nam.finished.connect(self.handleImageResponse)		
 		fileNames = []
@@ -70,34 +73,27 @@ class Model(QLabel):
 
 			req = QtNetwork.QNetworkRequest(QtCore.QUrl(url))
 			self.nam.get(req)
-
-			# response = urlopen(url)
-			# pic = response.read()
-
-			# thumb = self.resizeAndFrame(pic, self.thumbWidth, self.thumbHeight, self.thumbBorder)
-			# full = self.resizeAndFrame(pic, self.fullWidth, self.fullHeight, self.fullBorder)
-
-			# self.images[0].append(thumb)
-			# self.images[1].append(full)
-			# self.imageCount += 1
 		
 		return fileNames
 
 	def handleImageResponse(self, reply):
-		err = reply.error()
-
-		if err == QtNetwork.QNetworkReply.NoError:
+		er = reply.error()
+		if er == QtNetwork.QNetworkReply.NoError:
 			url_data = reply.readAll()
 			thumb = self.resizeAndFrame(url_data, self.thumbWidth, self.thumbHeight, self.thumbBorder)
 			full = self.resizeAndFrame(url_data, self.fullWidth, self.fullHeight, self.fullBorder)
 
 			self.images[0].append(thumb)
 			self.images[1].append(full)
-			print(self.imageCount)
 			self.imageCount += 1
-			self.setSelectedIndex(self.imageCount-1)
-			self.setLeftmostIndex(self.imageCount-1)
-			
+			self.searchCount +=1
+
+			if self.searchQty == self.searchCount:
+				self.setLeftmostIndex(self.getSelectedIndex() - self.searchQty)
+				self.setSelectedIndex(self.getSelectedIndex() - self.searchQty)
+				self.searchQty, self.searchCount = 0, 0
+				self.view.setFocus()
+						
 			self.view.draw()
 			self.view.initTags()
 			self.view.statusText.setText('Success!')

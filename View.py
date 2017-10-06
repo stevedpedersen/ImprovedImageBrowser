@@ -7,7 +7,7 @@
 # Description: Creates a Model to keep track of current state of data in View
 #		Also, displays images, handles user events, tag actions, etc..
 
-import Model, os, sys, json, requests
+import Model, os, sys, json, requests, time
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QAction, QLineEdit
 from PyQt5.QtCore import *
 from PyQt5.QtMultimedia import QSoundEffect
@@ -55,7 +55,7 @@ class View(QWidget):
 		# Thumbnail Mode
 		if mode == 0:	
 			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 3) 
-			y = y if y < self.model.getWindowHeight() - 150 else self.model.getWindowHeight() - 150
+			y = y if y < self.model.getWindowHeight() - 150 else self.model.getWindowHeight() - 250
 			for i in range(View.THUMB_QTY):
 				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
 				# Center the highlighted thumbnail when returning from full screen mode
@@ -155,7 +155,7 @@ class View(QWidget):
 			t.show()
 
 	# NOTE: requires requests module to be installed
-	# https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}_o.(jpg|gif|png)
+	# https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}.(jpg|gif|png)
 	def test(self):
 		query = self.searchTextBox.text()
 		query = query.replace(' ', '%20')
@@ -170,15 +170,6 @@ class View(QWidget):
 		else:
 			self.statusText.setText('No results found.')
 
-		
-		# response = urlopen(url)
-		# pic = response.read()	
-			
-		# pic = response.read()
-
-		# self.draw()
-		# self.initTags()		
-		# print()
 	def saveAll(self):
 		print()
 	def exit(self):
@@ -193,12 +184,27 @@ class View(QWidget):
 
 	# TODO: Make this actually use search query from textbox to ping the Flickr API
 	def search(self):
-		# print(self.searchTextBox.text())
-		fileNames = self.model.requestImages(View.TEST_URLS)
-		self.addToTagDict(fileNames)
-		self.model.addFiles(fileNames)
-		self.draw()
-		self.initTags()
+		query = self.searchTextBox.text()
+		query = query.replace(' ', '%20')
+		maxResults = self.maxResultBox.text() if len(self.maxResultBox.text()) > 0 else '1'
+		url = self.FLICKR_URL + '&per_page='+maxResults + '&api_key='+self.api_key + '&tags='+query
+		response = requests.get(url).json()
+		if (response['stat'] == 'ok'):
+			photoUrls = []
+			for p in response['photos']['photo']:
+				photoUrl = 'https://farm'+str(p['farm'])+'.staticflickr.com/'+str(p['server'])+'/'+str(p['id'])+'_'+str(p['secret'])+'.jpg'
+				photoUrls.append(photoUrl)
+			fileNames = self.model.requestImages(photoUrls)
+			self.addToTagDict(fileNames)
+			self.model.addFiles(fileNames)					
+		else:
+			self.statusText.setText('No results found.')		
+		
+		# fileNames = self.model.requestImages(View.TEST_URLS)
+		# self.addToTagDict(fileNames)
+		# self.model.addFiles(fileNames)
+		# self.draw()
+		# self.initTags()
 
 	def addToTagDict(self, items):
 		for item in items:
@@ -232,7 +238,6 @@ class View(QWidget):
 		self.hideTags()
 		self.tags = []
 		padding = self.model.getFullBorder()
-		# print(self.model.getFiles())
 		currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
 
 		for i in range(len(self.tagDict[currTagKey])):
