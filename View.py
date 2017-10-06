@@ -36,7 +36,7 @@ class View(QWidget):
 		self.setWindowTitle(self.title)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet(View.WINDOW_STYLE)	
-		self.showSearchComponents()
+		self.showThumbModeComponents()
 		self.initTags()
 		self.draw() 
 		self.show()
@@ -52,7 +52,7 @@ class View(QWidget):
 		
 		# Thumbnail Mode
 		if mode == 0:	
-			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 2) 
+			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 3) 
 			y = y if y < self.model.getWindowHeight() - 150 else self.model.getWindowHeight() - 150
 			for i in range(View.THUMB_QTY):
 				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
@@ -63,16 +63,16 @@ class View(QWidget):
 					color = 'red'	
 				
 				self.attachPixmap(thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color)
-			self.hideTagComponents()
+			self.hideFullModeComponents()
 			self.hideTags()
-			self.showSearchComponents()
+			self.showThumbModeComponents()
 
 		# Full Screen Mode		
 		elif mode == 1:
 			x = (self.model.getWindowWidth() - self.model.getFullWidth()) / 2
 			y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
 			self.attachPixmap(selected, View.THUMB_QTY, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
-			self.showTagComponents()
+			self.showFullModeComponents()
 			self.showTags()
 
 	# Assigns an image to one of the labels
@@ -90,31 +90,75 @@ class View(QWidget):
 		self.labels[lindex].clicked.connect(self.mouseSel)
 		self.labels[lindex].show()
 
-	def showSearchComponents(self):
-		padding = 30
+	def showThumbModeComponents(self):
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()	
+		padding = windowWidth / 25 if windowWidth / 25 < 35 else 35
 
-		self.searchComponents = []
+		self.thumbModeComponents = []
 		self.searchTextBox = QLineEdit(self)	
 		self.searchTextBox.resize(windowWidth/3, padding*1.5)
-		self.searchTextBox.move(padding, windowHeight - padding*2)
+		self.searchTextBox.move(padding, windowHeight - padding*4)
 		self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
 		self.searchTextBox.setPlaceholderText('Search Flickr...')
+		self.maxResultBox = QLineEdit(self)	
+		self.maxResultBox.resize(windowWidth/20, padding*1.5)
+		self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
+		self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
+		self.maxResultBox.setText('10')
+		self.maxResultLabel = QLabel(self)
+		self.maxResultLabel.resize(windowWidth/6, padding*1.5)
+		self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
+		self.maxResultLabel.setText('Max Search Results')
 
-		# connect button to functions search()
 		self.searchButton = QPushButton('Search', self)
 		self.searchButton.clicked.connect(self.search)
 		self.searchButton.setStyleSheet(View.BUTTON_STYLE)
-		self.searchButton.move(windowWidth/2, windowHeight - padding*1.7)
+		self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
+		self.testButton = QPushButton('Test', self)
+		self.testButton.clicked.connect(self.test)
+		self.testButton.setStyleSheet(View.BUTTON_STYLE)
+		self.testButton.resize(padding*2.6, padding)
+		self.testButton.move(padding, windowHeight - padding*1.8)
+		self.saveAllButton = QPushButton('Save', self)
+		self.saveAllButton.clicked.connect(self.saveAll)
+		self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
+		self.saveAllButton.resize(padding*2.6, padding)
+		self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*1.8)
+		self.exitButton = QPushButton('Exit', self)
+		self.exitButton.clicked.connect(self.exit)
+		self.exitButton.setStyleSheet(View.BUTTON_STYLE)
+		self.exitButton.resize(padding*2.6, padding)
+		self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*1.8)
+		self.deleteButton = QPushButton('Delete', self)
+		self.deleteButton.clicked.connect(self.delete)
+		self.deleteButton.setStyleSheet(View.BUTTON_STYLE)
+		self.deleteButton.resize(padding*2.6, padding)
+		self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*1.8)
 
-		self.searchComponents.append(self.searchTextBox)
-		self.searchComponents.append(self.searchButton)
-		for t in self.searchComponents:
+
+		self.thumbModeComponents.append(self.searchTextBox)
+		self.thumbModeComponents.append(self.searchButton)
+		self.thumbModeComponents.append(self.maxResultBox)
+		self.thumbModeComponents.append(self.maxResultLabel)
+		self.thumbModeComponents.append(self.testButton)
+		self.thumbModeComponents.append(self.saveAllButton)
+		self.thumbModeComponents.append(self.exitButton)
+		self.thumbModeComponents.append(self.deleteButton)
+		for t in self.thumbModeComponents:
 			t.show()
 
-	def hideSearchComponents(self):
-		for t in self.searchComponents:
+	def test(self):
+		print()
+	def saveAll(self):
+		print()
+	def exit(self):
+		print()
+	def delete(self):
+		print()
+
+	def hideThumbModeComponents(self):
+		for t in self.thumbModeComponents:
 			t.hide()
 			# t.setVisible(False)
 
@@ -134,8 +178,8 @@ class View(QWidget):
 	# Pre-load all tags for each image into a dictionary
 	def initTags(self):
 		self.tagTextBox = QLineEdit(self)	
-		self.tagComponents, self.tagDict = [], {}
-		self.tagComponents.append(self.tagTextBox)
+		self.fullModeComponents, self.tagDict = [], {}
+		self.fullModeComponents.append(self.tagTextBox)
 		self.tags = [] # QPushButton 'tags' List
 
 		# create a dict { imgFileName1: [tag1, tag2], ... }
@@ -176,7 +220,7 @@ class View(QWidget):
 
 
 	# Add textbox, buttons, and tags
-	def showTagComponents(self):
+	def showFullModeComponents(self):
 		padding = 30
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()
@@ -188,22 +232,22 @@ class View(QWidget):
 
 		# connect button to functions add/saveTags
 		self.addButton = QPushButton('Add Tag', self)
-		self.saveButton = QPushButton('Save All Tags', self)
+		self.saveTagsButton = QPushButton('Save All Tags', self)
 		self.addButton.clicked.connect(self.addTag)
-		self.saveButton.clicked.connect(self.saveTags)
+		self.saveTagsButton.clicked.connect(self.saveTags)
 		self.addButton.setStyleSheet(View.BUTTON_STYLE)
-		self.saveButton.setStyleSheet(View.BUTTON_STYLE)
+		self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
 
 		self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
-		self.saveButton.move(windowWidth/1.5, windowHeight - padding*1.7)
+		self.saveTagsButton.move(windowWidth/1.5, windowHeight - padding*1.7)
 
-		self.tagComponents.append(self.addButton)
-		self.tagComponents.append(self.saveButton)
-		for t in self.tagComponents:
+		self.fullModeComponents.append(self.addButton)
+		self.fullModeComponents.append(self.saveTagsButton)
+		for t in self.fullModeComponents:
 			t.show()
 
-	def hideTagComponents(self):
-		for t in self.tagComponents:
+	def hideFullModeComponents(self):
+		for t in self.fullModeComponents:
 			t.hide()
 
 	# Writes tags to files with .txt appended to the image name
@@ -324,6 +368,6 @@ class View(QWidget):
 		for i in range(View.THUMB_QTY + 1):
 			self.labels[i].hide()
 		self.hideTags()
-		self.hideSearchComponents()
-		# self.hideTagComponents()
+		self.hideThumbModeComponents()
+		# self.hideFullModeComponents()
 
