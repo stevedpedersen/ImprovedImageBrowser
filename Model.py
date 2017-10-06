@@ -33,6 +33,7 @@ class Model(QLabel):
 		self.view = parent
 		self.searchQty = 0
 		self.searchCount = 0
+		self.appendIndex = 0
 
 	def initModel(self, windowWidth, files):
 		self.setDimensions(windowWidth)
@@ -79,6 +80,9 @@ class Model(QLabel):
 	def handleImageResponse(self, reply):
 		er = reply.error()
 		if er == QtNetwork.QNetworkReply.NoError:
+			if self.searchCount == 0:
+				self.appendIndex = self.getImageCount()-1
+
 			url_data = reply.readAll()
 			thumb = self.resizeAndFrame(url_data, self.thumbWidth, self.thumbHeight, self.thumbBorder)
 			full = self.resizeAndFrame(url_data, self.fullWidth, self.fullHeight, self.fullBorder)
@@ -96,7 +100,7 @@ class Model(QLabel):
 						
 			self.view.draw()
 			self.view.initTags()
-			self.view.statusText.setText('Success!')
+			# self.view.statusText.setText('Success!')
 
 	# Scale image to width or height based on image orientation	& label dimensions
 	def resizeAndFrame(self, file, w, h, b):	

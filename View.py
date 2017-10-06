@@ -18,7 +18,7 @@ class View(QWidget):
 	THUMB_QTY = 5
 	WINDOW_STYLE = 'background-color: #FFFFFF;'
 	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 8px 20px; font-weight: bold;'
-	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1'
+	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&sort=relevance'
 	TEST_URLS = ['http://www.eatwisconsincheese.com/images/cheese/Limburger-h.jpg',
 		'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Hot_dog_with_mustard.png/1200px-Hot_dog_with_mustard.png',
 		'https://aff5fa4925746bf9c161-fb36f18ca122a30f6899af8eef8fa39b.ssl.cf5.rackcdn.com/images/Masthead_mario.17345b1513ac044897cfc243542899dce541e8dc.9afde10b.png']
@@ -31,6 +31,7 @@ class View(QWidget):
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
 		self.api_key = '56cd9cd52b1e025a3684840a4176cf88'
+		self.confirmedExit = False
 		self.initUI()
 		self.show()
 
@@ -159,7 +160,7 @@ class View(QWidget):
 	def test(self):
 		query = self.searchTextBox.text()
 		query = query.replace(' ', '%20')
-		url = self.FLICKR_URL + '&per_page=1&api_key='+self.api_key + '&tags='+query
+		url = self.FLICKR_URL + '&per_page=1&api_key='+self.api_key + '&text='+query
 		response = requests.get(url).json()
 		if (response['stat'] == 'ok'):
 			pj = response['photos']['photo'][0]
@@ -173,7 +174,12 @@ class View(QWidget):
 	def saveAll(self):
 		print()
 	def exit(self):
-		sys.exit()
+		if self.confirmedExit:
+			sys.exit()
+		else:
+			self.confirmedExit = True
+			self.statusText.setText('Are you sure you want to exit? (Press Exit again to confirm)')
+
 	def delete(self):
 		print()
 
@@ -187,7 +193,7 @@ class View(QWidget):
 		query = self.searchTextBox.text()
 		query = query.replace(' ', '%20')
 		maxResults = self.maxResultBox.text() if len(self.maxResultBox.text()) > 0 else '1'
-		url = self.FLICKR_URL + '&per_page='+maxResults + '&api_key='+self.api_key + '&tags='+query
+		url = self.FLICKR_URL + '&per_page='+maxResults + '&api_key='+self.api_key + '&text='+query
 		response = requests.get(url).json()
 		if (response['stat'] == 'ok'):
 			photoUrls = []
@@ -196,7 +202,8 @@ class View(QWidget):
 				photoUrls.append(photoUrl)
 			fileNames = self.model.requestImages(photoUrls)
 			self.addToTagDict(fileNames)
-			self.model.addFiles(fileNames)					
+			self.model.addFiles(fileNames)	
+			self.statusText.setText('Showing results for "'+query.replace('%20', ' '))				
 		else:
 			self.statusText.setText('No results found.')		
 		
@@ -403,5 +410,6 @@ class View(QWidget):
 			self.labels[i].hide()
 		self.hideTags()
 		self.hideThumbModeComponents()
+		self.confirmedExit = False
 		# self.hideFullModeComponents()
 
