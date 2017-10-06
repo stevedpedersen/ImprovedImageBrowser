@@ -173,7 +173,7 @@ class View(QWidget):
 	def saveAll(self):
 		print()
 	def exit(self):
-		print()
+		sys.exit()
 	def delete(self):
 		print()
 
