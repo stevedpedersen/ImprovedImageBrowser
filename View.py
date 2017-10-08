@@ -28,7 +28,7 @@ class View(QWidget):
 		self.model.setThumbQty(View.THUMB_QTY)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
-		self.apiKey = '56cd9cd52b1e025a3684840a4176cf88'
+		self.apiKey = self.model.getApiKey()
 		self.safeMode, self.confirmedExit = False, False
 		self.initUI()
 		self.show()

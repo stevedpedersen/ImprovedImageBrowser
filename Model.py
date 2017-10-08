@@ -135,6 +135,10 @@ class Model(QLabel):
 		# on click sends Model object to mouseSel()
 		self.clicked.emit(self)
 
+	def getApiKey(self, service='flickr'):
+		file = open('apikey-' + service, 'r')
+		return file.read().strip()
+
 	def getThumbQty(self):
 		return self.thumbQty
 	def setThumbQty(self, qty):
