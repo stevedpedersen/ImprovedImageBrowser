@@ -29,7 +29,7 @@ class View(QWidget):
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
 		self.apiKey = self.model.getApiKey()
-		self.safeMode, self.confirmedExit = False, False
+		self.safeMode, self.confirmedExit, self.confirmedDelete = False, False, False
 		self.initUI()
 		self.show()
 
@@ -103,7 +103,7 @@ class View(QWidget):
 			photoUrl = 'https://farm'+str(pj['farm'])+'.staticflickr.com/'+str(pj['server'])+'/'+str(pj['id'])+'_'+str(pj['secret'])+'.jpg'
 			fileNames = self.model.requestImages([photoUrl])
 			self.addToTagDict(fileNames)
-			self.model.addFiles(fileNames)
+			self.model.addFiles(fileNames, [photoUrl])
 			self.statusText.setText('Results found for "'+query.replace('%20', ' ')+ '. Rendering...')				
 		else:
 			self.statusText.setText('No results found.')
@@ -128,7 +128,7 @@ class View(QWidget):
 		self.model.clearNewFiles()
 
 		self.saveTags()
-		self.statusText.setText(str(len(newFiles)) + ' new files saved!')
+		self.statusText.setText(str(len(newFiles)) + ' new images saved.')
 		
 	# Exit program in safe mode with confirmation else without
 	def exit(self):
@@ -141,8 +141,28 @@ class View(QWidget):
 		else:
 			sys.exit()
 
+	# Deletes an image file, it's tags and updates the browser
+	# Prompts for confirmation if in safe mode
 	def delete(self):
-		print()
+		if self.safeMode:
+			if self.confirmedDelete:
+				self.deleteNow()
+			else:
+				self.confirmedDelete = True
+				self.statusText.setText('Are you sure you want to delete this image? (Press Delete again to confirm)')
+		else:
+			self.deleteNow()		
+	def deleteNow(self):
+		index = self.model.getSelectedIndex()
+		filename = self.model.getFile(index)
+		self.model.deleteImage(filename, index)
+		self.model.setSelectedIndex(index)
+		if len(self.tagDict[filename]) > 0:
+			os.remove('tags/' + filename + '.txt')
+			self.tagDict.pop(filename, None)
+
+		self.draw()
+		self.statusText.setText('Image "'+filename+'" deleted.')
 
 	def hideThumbModeComponents(self):
 		for t in self.thumbModeComponents:

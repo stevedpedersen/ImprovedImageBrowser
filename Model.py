@@ -94,8 +94,9 @@ class Model(QLabel):
 			self.searchCount +=1
 
 			if self.searchQty == self.searchCount:
-				self.setLeftmostIndex(self.getSelectedIndex() - self.searchQty)
-				self.setSelectedIndex(self.getSelectedIndex() - self.searchQty)
+				# print('new leftmost and selected: ', self.getSelectedIndex() - self.searchQty)
+				self.setLeftmostIndex(self.getImageCount() - self.searchQty)
+				self.setSelectedIndex(self.getImageCount() - self.searchQty)
 				self.searchQty, self.searchCount = 0, 0
 				self.view.setFocus()
 						
@@ -189,7 +190,7 @@ class Model(QLabel):
 	def getSelectedIndex(self):
 		return self.selectedIndex
 	def setSelectedIndex(self, index):
-		self.selectedIndex = index % self.getImageCount()		
+		self.selectedIndex = index % self.getImageCount()
 	def getLeftmostIndex(self):
 		return self.leftmostIndex
 	def setLeftmostIndex(self, index):
@@ -197,9 +198,10 @@ class Model(QLabel):
 	def getMode(self):
 		return self.mode
 	def setMode(self, mode):
-		self.mode = mode	
-	def getImages(self):
-		return self.images
+		self.mode = mode
+	def getFile(self, index):
+		if index < self.getImageCount():
+			return self.files[index]	
 	def getFiles(self):
 		return self.files
 	def setFiles(self, files):
@@ -217,7 +219,14 @@ class Model(QLabel):
 		self.newFiles = {}
 	def getNewFiles(self):
 		return self.newFiles
-			
+
+	def getImages(self):
+		return self.images			
 	def getImageCount(self):
 		return self.imageCount
-
+	def deleteImage(self, filename, index):
+		os.remove('data/' + filename)
+		del self.files[index]
+		del self.images[0][index]
+		del self.images[1][index]
+		self.imageCount -= 1
