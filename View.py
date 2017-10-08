@@ -16,13 +16,11 @@ class View(QWidget):
 
 	WINDOW_TITLE = 'Image Browser'
 	THUMB_QTY = 5
+	MAX_RESULTS = 20
 	WINDOW_STYLE = 'background-color: #FFFFFF;'
 	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 8px 20px; font-weight: bold;'
 	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&sort=relevance'
-	TEST_URLS = ['http://www.eatwisconsincheese.com/images/cheese/Limburger-h.jpg',
-		'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Hot_dog_with_mustard.png/1200px-Hot_dog_with_mustard.png',
-		'https://aff5fa4925746bf9c161-fb36f18ca122a30f6899af8eef8fa39b.ssl.cf5.rackcdn.com/images/Masthead_mario.17345b1513ac044897cfc243542899dce541e8dc.9afde10b.png']
-
+	
 	def __init__(self, windowWidth, files):
 		super().__init__()
 		self.title = View.WINDOW_TITLE
@@ -30,8 +28,8 @@ class View(QWidget):
 		self.model.setThumbQty(View.THUMB_QTY)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
-		self.api_key = '56cd9cd52b1e025a3684840a4176cf88'
-		self.confirmedExit = False
+		self.apiKey = '56cd9cd52b1e025a3684840a4176cf88'
+		self.safeMode, self.confirmedExit = False, False
 		self.initUI()
 		self.show()
 
@@ -93,92 +91,55 @@ class View(QWidget):
 		self.labels[lindex].clicked.connect(self.mouseSel)
 		self.labels[lindex].show()
 
-	def showThumbModeComponents(self):
-		windowWidth = self.model.getWindowWidth()
-		windowHeight = self.model.getWindowHeight()	
-		padding = windowWidth / 25 if windowWidth / 25 < 35 else 35
-
-		self.thumbModeComponents = []
-		self.searchTextBox = QLineEdit(self)	
-		self.searchTextBox.resize(windowWidth/3, padding*1.5)
-		self.searchTextBox.move(padding, windowHeight - padding*4)
-		self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
-		self.searchTextBox.setPlaceholderText('Search Flickr...')
-		self.maxResultBox = QLineEdit(self)	
-		self.maxResultBox.resize(windowWidth/20, padding*1.5)
-		self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
-		self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
-		self.maxResultBox.setText('10')
-		self.maxResultLabel = QLabel(self)
-		self.maxResultLabel.resize(windowWidth/6, padding*1.5)
-		self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
-		self.maxResultLabel.setText('Max Search Results')
-
-		self.searchButton = QPushButton('Search', self)
-		self.searchButton.clicked.connect(self.search)
-		self.searchButton.setStyleSheet(View.BUTTON_STYLE)
-		self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
-		self.testButton = QPushButton('Test', self)
-		self.testButton.clicked.connect(self.test)
-		self.testButton.setStyleSheet(View.BUTTON_STYLE)
-		self.testButton.resize(padding*2.6, padding)
-		self.testButton.move(padding, windowHeight - padding*2)
-		self.saveAllButton = QPushButton('Save', self)
-		self.saveAllButton.clicked.connect(self.saveAll)
-		self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
-		self.saveAllButton.resize(padding*2.6, padding)
-		self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*2)
-		self.exitButton = QPushButton('Exit', self)
-		self.exitButton.clicked.connect(self.exit)
-		self.exitButton.setStyleSheet(View.BUTTON_STYLE)
-		self.exitButton.resize(padding*2.6, padding)
-		self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*2)
-		self.deleteButton = QPushButton('Delete', self)
-		self.deleteButton.clicked.connect(self.delete)
-		self.deleteButton.setStyleSheet(View.BUTTON_STYLE)
-		self.deleteButton.resize(padding*2.6, padding)
-		self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*2)
-
-		self.statusText = QLabel(self)
-		self.statusText.resize(windowWidth-padding*2, padding)
-		self.statusText.move(padding, windowHeight - padding)		
-
-		self.thumbModeComponents.append(self.searchTextBox)
-		self.thumbModeComponents.append(self.searchButton)
-		self.thumbModeComponents.append(self.maxResultBox)
-		self.thumbModeComponents.append(self.maxResultLabel)
-		self.thumbModeComponents.append(self.testButton)
-		self.thumbModeComponents.append(self.saveAllButton)
-		self.thumbModeComponents.append(self.exitButton)
-		self.thumbModeComponents.append(self.deleteButton)
-		self.thumbModeComponents.append(self.statusText)
-		for t in self.thumbModeComponents:
-			t.show()
-
-	# NOTE: requires requests module to be installed
-	# https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{o-secret}.(jpg|gif|png)
+	# Test API by searching for a single image using query in search text field
+	# https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}.jpg
 	def test(self):
 		query = self.searchTextBox.text()
 		query = query.replace(' ', '%20')
-		url = self.FLICKR_URL + '&per_page=1&api_key='+self.api_key + '&text='+query
+		url = self.FLICKR_URL + '&per_page=1&api_key='+self.apiKey + '&text='+query
 		response = requests.get(url).json()
-		if (response['stat'] == 'ok'):
+		if response['stat'] == 'ok' and response['photos']['total'] != '0':
 			pj = response['photos']['photo'][0]
 			photoUrl = 'https://farm'+str(pj['farm'])+'.staticflickr.com/'+str(pj['server'])+'/'+str(pj['id'])+'_'+str(pj['secret'])+'.jpg'
 			fileNames = self.model.requestImages([photoUrl])
 			self.addToTagDict(fileNames)
-			self.model.addFiles(fileNames)					
+			self.model.addFiles(fileNames)
+			self.statusText.setText('Results found for "'+query.replace('%20', ' ')+ '. Rendering...')				
 		else:
 			self.statusText.setText('No results found.')
 
+	# Save any new images found from the web to data folder.
+	# Also save any new tags associated with new images.
 	def saveAll(self):
-		print()
+		newFiles = self.model.getNewFiles()
+		for file, url in newFiles.items():
+			with open('data/' + file, 'wb') as handle:
+				response = requests.get(url, stream=True)
+
+				if not response.ok:
+					print(response)
+
+				for block in response.iter_content(1024):
+					if not block:
+						break
+					handle.write(block)
+
+		# files are no longer new, so update the Model
+		self.model.clearNewFiles()
+
+		self.saveTags()
+		self.statusText.setText(str(len(newFiles)) + ' new files saved!')
+		
+	# Exit program in safe mode with confirmation else without
 	def exit(self):
-		if self.confirmedExit:
-			sys.exit()
+		if self.safeMode:
+			if self.confirmedExit:
+				sys.exit()
+			else:
+				self.confirmedExit = True
+				self.statusText.setText('Are you sure you want to exit? (Press Exit again to confirm)')
 		else:
-			self.confirmedExit = True
-			self.statusText.setText('Are you sure you want to exit? (Press Exit again to confirm)')
+			sys.exit()
 
 	def delete(self):
 		print()
@@ -188,30 +149,26 @@ class View(QWidget):
 			t.hide()
 			# t.setVisible(False)
 
-	# TODO: Make this actually use search query from textbox to ping the Flickr API
+	# Search for a specified amount of images (at the maximum) and display in browser
 	def search(self):
 		query = self.searchTextBox.text()
 		query = query.replace(' ', '%20')
 		maxResults = self.maxResultBox.text() if len(self.maxResultBox.text()) > 0 else '1'
-		url = self.FLICKR_URL + '&per_page='+maxResults + '&api_key='+self.api_key + '&text='+query
+		maxResults = maxResults if int(maxResults) < View.MAX_RESULTS else View.MAX_RESULTS
+		url = self.FLICKR_URL + '&per_page='+maxResults + '&api_key='+self.apiKey + '&text='+query
 		response = requests.get(url).json()
 		if (response['stat'] == 'ok'):
 			photoUrls = []
 			for p in response['photos']['photo']:
 				photoUrl = 'https://farm'+str(p['farm'])+'.staticflickr.com/'+str(p['server'])+'/'+str(p['id'])+'_'+str(p['secret'])+'.jpg'
+				print(photoUrl)
 				photoUrls.append(photoUrl)
 			fileNames = self.model.requestImages(photoUrls)
 			self.addToTagDict(fileNames)
-			self.model.addFiles(fileNames)	
-			self.statusText.setText('Showing results for "'+query.replace('%20', ' '))				
+			self.model.addFiles(fileNames, photoUrls)	
+			self.statusText.setText('Results found for "'+query.replace('%20', ' ')+ '. Rendering...')			
 		else:
 			self.statusText.setText('No results found.')		
-		
-		# fileNames = self.model.requestImages(View.TEST_URLS)
-		# self.addToTagDict(fileNames)
-		# self.model.addFiles(fileNames)
-		# self.draw()
-		# self.initTags()
 
 	def addToTagDict(self, items):
 		for item in items:
@@ -403,6 +360,64 @@ class View(QWidget):
 
 		# print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
 		self.draw()
+
+	def showThumbModeComponents(self):
+		windowWidth = self.model.getWindowWidth()
+		windowHeight = self.model.getWindowHeight()	
+		padding = windowWidth / 25 if windowWidth / 25 < 35 else 35
+
+		self.thumbModeComponents = []
+		self.searchTextBox = QLineEdit(self)	
+		self.searchTextBox.resize(windowWidth/3, padding*1.5)
+		self.searchTextBox.move(padding, windowHeight - padding*4)
+		self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
+		self.searchTextBox.setPlaceholderText('Search Flickr...')
+		self.maxResultBox = QLineEdit(self)	
+		self.maxResultBox.resize(windowWidth/20, padding*1.5)
+		self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
+		self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
+		self.maxResultBox.setText(str(int(View.MAX_RESULTS / 2)))
+		self.maxResultLabel = QLabel(self)
+		self.maxResultLabel.resize(windowWidth/6, padding*1.5)
+		self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
+		self.maxResultLabel.setText('Max Search Results')
+
+		self.searchButton = QPushButton('Search', self)
+		self.searchButton.clicked.connect(self.search)
+		self.searchButton.setStyleSheet(View.BUTTON_STYLE)
+		self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
+		self.testButton = QPushButton('Test', self)
+		self.testButton.clicked.connect(self.test)
+		self.testButton.setStyleSheet(View.BUTTON_STYLE)
+		self.testButton.resize(padding*2.6, padding)
+		self.testButton.move(padding, windowHeight - padding*2)
+		self.saveAllButton = QPushButton('Save', self)
+		self.saveAllButton.clicked.connect(self.saveAll)
+		self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
+		self.saveAllButton.resize(padding*2.6, padding)
+		self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*2)
+		self.exitButton = QPushButton('Exit', self)
+		self.exitButton.clicked.connect(self.exit)
+		self.exitButton.setStyleSheet(View.BUTTON_STYLE)
+		self.exitButton.resize(padding*2.6, padding)
+		self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*2)
+		self.deleteButton = QPushButton('Delete', self)
+		self.deleteButton.clicked.connect(self.delete)
+		self.deleteButton.setStyleSheet(View.BUTTON_STYLE)
+		self.deleteButton.resize(padding*2.6, padding)
+		self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*2)
+
+		self.statusText = QLabel(self)
+		self.statusText.resize(windowWidth-padding*2, padding)
+		self.statusText.move(padding, windowHeight - padding)		
+
+		self.thumbModeComponents.extend([
+			self.searchTextBox,self.searchButton,self.maxResultBox,self.maxResultLabel,self.testButton,
+			self.saveAllButton, self.exitButton, self.deleteButton, self.statusText
+		])
+
+		for t in self.thumbModeComponents:
+			t.show()
 
 	# Hide any visible contents on browser window
 	def clearBrowser(self):

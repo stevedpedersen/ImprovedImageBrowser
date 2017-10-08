@@ -34,6 +34,7 @@ class Model(QLabel):
 		self.searchQty = 0
 		self.searchCount = 0
 		self.appendIndex = 0
+		self.newFiles = {}
 
 	def initModel(self, windowWidth, files):
 		self.setDimensions(windowWidth)
@@ -198,10 +199,21 @@ class Model(QLabel):
 	def getFiles(self):
 		return self.files
 	def setFiles(self, files):
+		for i, f in enumerate(files):
+			if f.rfind('.') == 0:
+				# print('Deleted hidden file: ', f)
+				del files[i]
 		self.files = files
-	def addFiles(self, files):
-		for file in files:
+	def addFiles(self, files, urls = None):
+		for i, file in enumerate(files):
 			self.files.append(file)
+			if urls != None:
+				self.newFiles[file] = urls[i]
+	def clearNewFiles(self):
+		self.newFiles = {}
+	def getNewFiles(self):
+		return self.newFiles
+			
 	def getImageCount(self):
 		return self.imageCount
 
