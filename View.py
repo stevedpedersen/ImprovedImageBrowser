@@ -174,8 +174,10 @@ class View(QWidget):
 		query = self.searchTextBox.text()
 		query = query.replace(' ', '%20')
 		maxResults = self.maxResultBox.text() if len(self.maxResultBox.text()) > 0 else '1'
-		maxResults = maxResults if int(maxResults) < View.MAX_RESULTS else View.MAX_RESULTS
-		url = self.FLICKR_URL + '&per_page='+maxResults + '&api_key='+self.apiKey + '&text='+query
+		if self.safeMode:
+			maxResults = maxResults if int(maxResults) < View.MAX_RESULTS else View.MAX_RESULTS		
+		
+		url = self.FLICKR_URL + '&per_page='+str(maxResults) + '&api_key='+self.apiKey + '&text='+str(query)
 		response = requests.get(url).json()
 		if (response['stat'] == 'ok'):
 			photoUrls = []
