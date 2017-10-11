@@ -21,15 +21,15 @@ class View(QWidget):
 	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 8px 20px; font-weight: bold;'
 	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&sort=relevance'
 	
-	def __init__(self, windowWidth, files):
+	def __init__(self, windowWidth, files, safeMode, apiKeyExists):
 		super().__init__()
 		self.title = View.WINDOW_TITLE
 		self.model = Model.Model(self)
 		self.model.setThumbQty(View.THUMB_QTY)
 		self.model.initModel(windowWidth, files)
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
-		self.apiKey = self.model.getApiKey()
-		self.safeMode, self.confirmedExit, self.confirmedDelete = False, False, False
+		self.apiKey = self.model.getApiKey() if apiKeyExists else ''
+		self.safeMode, self.confirmedExit, self.confirmedDelete = safeMode, False, False
 		self.initUI()
 		self.show()
 
@@ -389,30 +389,39 @@ class View(QWidget):
 		padding = windowWidth / 25 if windowWidth / 25 < 35 else 35
 
 		self.thumbModeComponents = []
-		self.searchTextBox = QLineEdit(self)	
-		self.searchTextBox.resize(windowWidth/3, padding*1.5)
-		self.searchTextBox.move(padding, windowHeight - padding*4)
-		self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
-		self.searchTextBox.setPlaceholderText('Search Flickr...')
-		self.maxResultBox = QLineEdit(self)	
-		self.maxResultBox.resize(windowWidth/20, padding*1.5)
-		self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
-		self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
-		self.maxResultBox.setText(str(int(View.MAX_RESULTS / 2)))
-		self.maxResultLabel = QLabel(self)
-		self.maxResultLabel.resize(windowWidth/6, padding*1.5)
-		self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
-		self.maxResultLabel.setText('Max Search Results')
 
-		self.searchButton = QPushButton('Search', self)
-		self.searchButton.clicked.connect(self.search)
-		self.searchButton.setStyleSheet(View.BUTTON_STYLE)
-		self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
-		self.testButton = QPushButton('Test', self)
-		self.testButton.clicked.connect(self.test)
-		self.testButton.setStyleSheet(View.BUTTON_STYLE)
-		self.testButton.resize(padding*2.6, padding)
-		self.testButton.move(padding, windowHeight - padding*2)
+		# Elements requiring API Key
+		if len(self.apiKey) > 0:
+			self.searchTextBox = QLineEdit(self)	
+			self.searchTextBox.resize(windowWidth/3, padding*1.5)
+			self.searchTextBox.move(padding, windowHeight - padding*4)
+			self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
+			self.searchTextBox.setPlaceholderText('Search Flickr...')
+			self.maxResultBox = QLineEdit(self)	
+			self.maxResultBox.resize(windowWidth/20, padding*1.5)
+			self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
+			self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
+			self.maxResultBox.setText(str(int(View.MAX_RESULTS / 2)))
+			self.maxResultLabel = QLabel(self)
+			self.maxResultLabel.resize(windowWidth/6, padding*1.5)
+			self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
+			self.maxResultLabel.setText('Max Search Results')
+
+			self.searchButton = QPushButton('Search', self)
+			self.searchButton.clicked.connect(self.search)
+			self.searchButton.setStyleSheet(View.BUTTON_STYLE)
+			self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
+			self.testButton = QPushButton('Test', self)
+			self.testButton.clicked.connect(self.test)
+			self.testButton.setStyleSheet(View.BUTTON_STYLE)
+			self.testButton.resize(padding*2.6, padding)
+			self.testButton.move(padding, windowHeight - padding*2)
+
+			self.thumbModeComponents.extend([
+				self.searchTextBox,self.searchButton,self.maxResultBox,self.maxResultLabel
+			])
+
+		# Elements not dependent on API Key
 		self.saveAllButton = QPushButton('Save', self)
 		self.saveAllButton.clicked.connect(self.saveAll)
 		self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
@@ -434,7 +443,6 @@ class View(QWidget):
 		self.statusText.move(padding, windowHeight - padding)		
 
 		self.thumbModeComponents.extend([
-			self.searchTextBox,self.searchButton,self.maxResultBox,self.maxResultLabel,self.testButton,
 			self.saveAllButton, self.exitButton, self.deleteButton, self.statusText
 		])
 
