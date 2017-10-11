@@ -4,7 +4,8 @@
 # Usage: python3 ImageBrowser.py <Window Width (int)> <Safe Mode (0/1)>
 # Usage Example 800x600 window in Safe Mode: python3 ImageBrowser.py 800 1
 # System: OS X
-# Dependencies: Python3, PyQt5, Flickr API key saved in a file with a name prepended with 'apikey' (e.g. apikey-flickr)
+# Dependencies: Python3, PyQt5, requests, Flickr API key saved in a file with a name 
+#	prepended with 'apikey' (e.g. apikey-flickr)
 # Description: Creates an image browser that displays images as thumbnails and fullscreen.
 #	Navigation with keys and mouse. Add tags to images and save them. Search the Flickr
 #	database for images to add to the image browser. Safe Mode gives confirmation on exit/delete
