@@ -53,8 +53,7 @@ class View(QWidget):
 		
 		# Thumbnail Mode
 		if mode == 0:	
-			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 5) 
-			y = y if y < self.model.getWindowHeight() - 150 else self.model.getWindowHeight() - 250
+			y = self.model.getWindowHeight() / 3
 			for i in range(View.THUMB_QTY):
 				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
 				# Center the highlighted thumbnail when returning from full screen mode
