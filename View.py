@@ -418,7 +418,7 @@ class View(QWidget):
 			self.testButton.move(padding, windowHeight - padding*2)
 
 			self.thumbModeComponents.extend([
-				self.searchTextBox,self.searchButton,self.maxResultBox,self.maxResultLabel
+				self.searchTextBox,self.searchButton,self.testButton,self.maxResultBox,self.maxResultLabel
 			])
 
 		# Elements not dependent on API Key
