@@ -53,7 +53,7 @@ class View(QWidget):
 		
 		# Thumbnail Mode
 		if mode == 0:	
-			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 3) 
+			y = self.model.getWindowHeight() - (self.model.getThumbHeight() * 5) 
 			y = y if y < self.model.getWindowHeight() - 150 else self.model.getWindowHeight() - 250
 			for i in range(View.THUMB_QTY):
 				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
@@ -349,6 +349,9 @@ class View(QWidget):
 			self.playSound(big)
 		elif currentMode == full and event.key() == enter:
 			self.addTag()
+		# Search for images when user hits Enter key
+		elif currentMode == thumb and event.key() == enter and self.searchTextBox.text() != '':
+			self.search()
 
 		# After user event update the view
 		self.draw()

@@ -228,7 +228,10 @@ class Model(QLabel):
 	def getImageCount(self):
 		return self.imageCount
 	def deleteImage(self, filename, index):
-		os.remove('data/' + filename)
+		try:
+		    os.remove('data/' + filename)
+		except OSError:
+		    pass		
 		del self.files[index]
 		del self.images[0][index]
 		del self.images[1][index]
