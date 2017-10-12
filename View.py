@@ -63,7 +63,9 @@ class View(QWidget):
 				if thumb == selected:
 					color = 'red'	
 				
-				self.attachPixmap(thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color)
+				self.attachPixmap(
+					thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color
+				)
 			self.hideFullModeComponents()
 			self.hideTags()
 			self.showThumbModeComponents()
@@ -72,7 +74,9 @@ class View(QWidget):
 		elif mode == 1:
 			x = (self.model.getWindowWidth() - self.model.getFullWidth()) / 2
 			y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
-			self.attachPixmap(selected, View.THUMB_QTY, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red')
+			self.attachPixmap(
+				selected, View.THUMB_QTY, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red'
+			)
 			self.showFullModeComponents()
 			self.showTags()
 
@@ -100,7 +104,8 @@ class View(QWidget):
 		response = requests.get(url).json()
 		if response['stat'] == 'ok' and response['photos']['total'] != '0':
 			pj = response['photos']['photo'][0]
-			photoUrl = 'https://farm'+str(pj['farm'])+'.staticflickr.com/'+str(pj['server'])+'/'+str(pj['id'])+'_'+str(pj['secret'])+'.jpg'
+			photoUrl = 'https://farm' + str(pj['farm']) + '.staticflickr.com/' + str(pj['server'])
+			photoUrl = photoUrl + '/' + str(pj['id']) + '_' + str(pj['secret']) + '.jpg'
 			fileNames = self.model.requestImages([photoUrl])
 			self.addToTagDict(fileNames)
 			self.model.addFiles(fileNames, [photoUrl])
@@ -164,11 +169,6 @@ class View(QWidget):
 		self.draw()
 		self.statusText.setText('Image "'+filename+'" deleted.')
 
-	def hideThumbModeComponents(self):
-		for t in self.thumbModeComponents:
-			t.hide()
-			# t.setVisible(False)
-
 	# Search for a specified amount of images (at the maximum) and display in browser
 	def search(self):
 		query = self.searchTextBox.text()
@@ -182,7 +182,8 @@ class View(QWidget):
 		if (response['stat'] == 'ok'):
 			photoUrls = []
 			for p in response['photos']['photo']:
-				photoUrl = 'https://farm'+str(p['farm'])+'.staticflickr.com/'+str(p['server'])+'/'+str(p['id'])+'_'+str(p['secret'])+'.jpg'
+				photoUrl = 'https://farm' + str(p['farm']) + '.staticflickr.com/' + str(p['server'])
+				photoUrl = photoUrl + '/' + str(p['id']) + '_' + str(p['secret']) + '.jpg'
 				print(photoUrl)
 				photoUrls.append(photoUrl)
 			fileNames = self.model.requestImages(photoUrls)
@@ -192,6 +193,7 @@ class View(QWidget):
 		else:
 			self.statusText.setText('No results found.')		
 
+	# Update the Tag Dictionary
 	def addToTagDict(self, items):
 		for item in items:
 			self.tagDict.update( { item: [] } )	
@@ -237,38 +239,6 @@ class View(QWidget):
 			t.hide()
 			t.setVisible(False)
 		self.tags = []
-
-
-	# Add textbox, buttons, and tags
-	def showFullModeComponents(self):
-		padding = 30
-		windowWidth = self.model.getWindowWidth()
-		windowHeight = self.model.getWindowHeight()
-
-		self.tagTextBox.resize(windowWidth/3, padding*1.5)
-		self.tagTextBox.move(padding, windowHeight - padding*2)
-		self.tagTextBox.setStyleSheet('border: 1px solid #868e96;')
-		self.tagTextBox.setPlaceholderText('Enter tag text...')
-
-		# connect button to functions add/saveTags
-		self.addButton = QPushButton('Add Tag', self)
-		self.saveTagsButton = QPushButton('Save All Tags', self)
-		self.addButton.clicked.connect(self.addTag)
-		self.saveTagsButton.clicked.connect(self.saveTags)
-		self.addButton.setStyleSheet(View.BUTTON_STYLE)
-		self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
-
-		self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
-		self.saveTagsButton.move(windowWidth/1.5, windowHeight - padding*1.7)
-
-		self.fullModeComponents.append(self.addButton)
-		self.fullModeComponents.append(self.saveTagsButton)
-		for t in self.fullModeComponents:
-			t.show()
-
-	def hideFullModeComponents(self):
-		for t in self.fullModeComponents:
-			t.hide()
 
 	# Writes tags to files with .txt appended to the image name
 	# For example, if image filename is Test0.png then tag filename is Test0.png.txt
@@ -380,9 +350,10 @@ class View(QWidget):
 		elif currentMode == full and event.key() == enter:
 			self.addTag()
 
-		# print('Leftmost: '+str(self.model.getLeftmostIndex())+'\tSelected: '+str(self.model.getSelectedIndex()))
+		# After user event update the view
 		self.draw()
 
+	# Display Thumbnail Mode components such as search, exit, delete, etc.
 	def showThumbModeComponents(self):
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()	
@@ -449,6 +420,41 @@ class View(QWidget):
 		for t in self.thumbModeComponents:
 			t.show()
 
+	def hideThumbModeComponents(self):
+		for t in self.thumbModeComponents:
+			t.hide()
+
+	# Show Full Screen mode components such as textbox, buttons, and tags
+	def showFullModeComponents(self):
+		padding = 30
+		windowWidth = self.model.getWindowWidth()
+		windowHeight = self.model.getWindowHeight()
+
+		self.tagTextBox.resize(windowWidth/3, padding*1.5)
+		self.tagTextBox.move(padding, windowHeight - padding*2)
+		self.tagTextBox.setStyleSheet('border: 1px solid #868e96;')
+		self.tagTextBox.setPlaceholderText('Enter tag text...')
+
+		# connect button to functions add/saveTags
+		self.addButton = QPushButton('Add Tag', self)
+		self.saveTagsButton = QPushButton('Save All Tags', self)
+		self.addButton.clicked.connect(self.addTag)
+		self.saveTagsButton.clicked.connect(self.saveTags)
+		self.addButton.setStyleSheet(View.BUTTON_STYLE)
+		self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
+
+		self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
+		self.saveTagsButton.move(windowWidth/1.5, windowHeight - padding*1.7)
+
+		self.fullModeComponents.append(self.addButton)
+		self.fullModeComponents.append(self.saveTagsButton)
+		for t in self.fullModeComponents:
+			t.show()
+
+	def hideFullModeComponents(self):
+		for t in self.fullModeComponents:
+			t.hide()
+
 	# Hide any visible contents on browser window
 	def clearBrowser(self):
 		for i in range(View.THUMB_QTY + 1):
@@ -456,5 +462,6 @@ class View(QWidget):
 		self.hideTags()
 		self.hideThumbModeComponents()
 		self.confirmedExit = False
-		# self.hideFullModeComponents()
 
+
+###################    End View Class    ###################

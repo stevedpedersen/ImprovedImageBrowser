@@ -78,6 +78,8 @@ class Model(QLabel):
 		
 		return fileNames
 
+	# Handler from QNetworkAccessManager request made in requestImages()
+	# Uses raw data from response and creates Pixmaps to be displayed in Browser
 	def handleImageResponse(self, reply):
 		er = reply.error()
 		if er == QtNetwork.QNetworkReply.NoError:
@@ -132,6 +134,7 @@ class Model(QLabel):
 		self.setFullHeight	( int(3 * self.fullWidth / 4) )
 		self.setFullBorder	( int(self.windowWidth / (self.thumbWidth * 0.25)) )
 
+	# Overriden method. Emits signal of type Model object (QLabel)
 	def mousePressEvent(self, event):
 		# on click sends Model object to mouseSel()
 		self.clicked.emit(self)
@@ -230,3 +233,6 @@ class Model(QLabel):
 		del self.images[0][index]
 		del self.images[1][index]
 		self.imageCount -= 1
+
+
+###################    End Model Class    ###################
