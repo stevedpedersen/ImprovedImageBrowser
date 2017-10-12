@@ -65,8 +65,6 @@ class View(QWidget):
 				self.attachPixmap(
 					thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color
 				)
-			self.hideFullModeComponents()
-			self.hideTags()
 			self.showThumbModeComponents()
 
 		# Full Screen Mode		
@@ -81,7 +79,6 @@ class View(QWidget):
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
-		#print(pindex, lindex, x, y, w, h, b, color)
 		mode = 0
 		if lindex == View.THUMB_QTY:
 			mode = 1
@@ -183,8 +180,8 @@ class View(QWidget):
 			for p in response['photos']['photo']:
 				photoUrl = 'https://farm' + str(p['farm']) + '.staticflickr.com/' + str(p['server'])
 				photoUrl = photoUrl + '/' + str(p['id']) + '_' + str(p['secret']) + '.jpg'
-				print(photoUrl)
 				photoUrls.append(photoUrl)
+				print(photoUrl)
 			fileNames = self.model.requestImages(photoUrls)
 			self.addToTagDict(fileNames)
 			self.model.addFiles(fileNames, photoUrls)	
@@ -222,7 +219,6 @@ class View(QWidget):
 
 	# Displays all tags for currently selected image
 	def showTags(self):
-		self.hideTags()
 		self.tags = []
 		padding = self.model.getFullBorder()
 		currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
@@ -236,7 +232,6 @@ class View(QWidget):
 	def hideTags(self):
 		for t in self.tags:
 			t.hide()
-			t.setVisible(False)
 		self.tags = []
 
 	# Writes tags to files with .txt appended to the image name
@@ -463,6 +458,7 @@ class View(QWidget):
 			self.labels[i].hide()
 		self.hideTags()
 		self.hideThumbModeComponents()
+		self.hideFullModeComponents()
 		self.confirmedExit = False
 
 
