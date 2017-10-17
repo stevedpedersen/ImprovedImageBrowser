@@ -286,7 +286,9 @@ class View(QWidget):
 		self.sound = QSoundEffect()
 		self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
 		self.sound.setLoopCount(1)
-		self.sound.play()	
+		# don't play sounds in Safe Mode
+		if not self.safeMode:
+			self.sound.play()	
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label):
