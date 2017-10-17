@@ -5,7 +5,8 @@
 # System: OS X
 # Dependencies: Python3, PyQt5, requests (pip3 install requests)
 # Description: Creates a Model to keep track of current state of data in View
-#		Also, displays images, handles user events, tag actions, etc..
+#		Also, displays images, handles user events, tag actions, etc.. 
+# Test Search: SFSUCS413F16Test
 
 import Model, os, sys, json, requests, time
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QAction, QLineEdit
@@ -33,7 +34,6 @@ class View(QWidget):
 		self.thumbModeComponents, self.fullModeComponents, self.statusText = [], [], None
 
 		self.initUI()
-		self.show()
 
 	def initUI(self):
 		self.setWindowTitle(View.WINDOW_TITLE)
@@ -56,7 +56,7 @@ class View(QWidget):
 			if mode == 0:
 				if self.model.getImageCount() > 0:	
 					y = self.model.getWindowHeight() / 3
-					visibleThumbQty = View.THUMB_QTY if self.model.getImageCount() > 4 else self.model.getImageCount()
+					visibleThumbQty = View.THUMB_QTY if self.model.getImageCount() > View.THUMB_QTY-1 else self.model.getImageCount()
 					for i in range(visibleThumbQty):
 						x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
 						# Center the highlighted thumbnail when returning from full screen mode
@@ -303,8 +303,8 @@ class View(QWidget):
 		thumb, full = 0, 1
 		short, medium, big = 0, 1, 2
 		tab, esc, enter = 16777217, 16777216, 16777220
-		currentMode = self.model.getMode()
-		hasImages = self.model.getImageCount() > 0
+		currentMode,selected,leftmost = self.model.getMode(),self.model.getSelectedIndex(),self.model.getLeftmostIndex()
+		hasImages, imgCount = self.model.getImageCount() > 0, self.model.getImageCount()
 		# print(event.key())
 
 		# Enter Full Screen Mode
@@ -314,45 +314,46 @@ class View(QWidget):
 		# Exit Full Screen Mode			
 		elif currentMode == full and event.key() == down and hasImages:
 			self.model.setMode(thumb)
-			self.model.setLeftmostIndex(self.model.getSelectedIndex() - 2)
+			self.model.setLeftmostIndex(selected - 2)
 			self.playSound(medium)
 		# Left - Full Screen
 		elif currentMode == full and event.key() == left and hasImages:
-			self.model.setSelectedIndex(self.model.getSelectedIndex() - 1)
+			self.model.setSelectedIndex(selected - 1)
 			self.playSound(short)
 		# Right - Full Screen		
 		elif currentMode == full and event.key() == right and hasImages:
-			self.model.setSelectedIndex(self.model.getSelectedIndex() + 1)
+			self.model.setSelectedIndex(selected + 1)
 			self.playSound(short)
 		# Left - Thumbnail
 		elif currentMode == thumb and event.key() == left and hasImages:
-			selected = self.model.getSelectedIndex()
-			leftmost = self.model.getLeftmostIndex()
-			newIndex = (selected - 1) % self.model.getImageCount()
+			newIndex = (selected - 1) % imgCount
 			if selected == leftmost:
-				self.model.setLeftmostIndex(leftmost - View.THUMB_QTY)
+				# only shift the displayed thumbs if # of images exceeds # of thumbnail labels
+				self.model.setLeftmostIndex(
+					leftmost - (View.THUMB_QTY if View.THUMB_QTY <= imgCount else imgCount)
+				)
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Right - Thumbnail		
 		elif currentMode == thumb and event.key() == right and hasImages:
-			selected = self.model.getSelectedIndex()
-			leftmost = self.model.getLeftmostIndex()
-			newIndex = (selected + 1) % self.model.getImageCount()
-			if selected == ((leftmost + View.THUMB_QTY - 1) % self.model.getImageCount()):
-				self.model.setLeftmostIndex(leftmost + View.THUMB_QTY)
+			newIndex = (selected + 1) % imgCount
+			limit = View.THUMB_QTY-1 if View.THUMB_QTY < imgCount else imgCount-1
+			if selected == ((leftmost + limit) % imgCount):
+				# only shift the displayed thumbs if # of images exceeds # of thumbnail labels
+				self.model.setLeftmostIndex(
+					leftmost + (View.THUMB_QTY if View.THUMB_QTY <= imgCount else imgCount)
+				)
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Next set Left - Thumbnail		
 		elif currentMode == thumb and event.key() == scrollL and hasImages:
-			selected = self.model.getSelectedIndex()
-			newIndex = (selected - View.THUMB_QTY) % self.model.getImageCount()
+			newIndex = (selected - View.THUMB_QTY) % imgCount
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
 		# Next set Right - Thumbnail		
 		elif currentMode == thumb and event.key() == scrollR and hasImages:
-			selected = self.model.getSelectedIndex()
-			newIndex = (selected + View.THUMB_QTY) % self.model.getImageCount()
+			newIndex = (selected + View.THUMB_QTY) % imgCount
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
