@@ -1,6 +1,17 @@
 *.pyc
 __pycache__/*
 .DS_Store
+**/.DS_Store
 __pycache__/
 apikey-*
 test
+
+# Don't track images, except for Test 0-F
+data/*
+!data/Test*
+
+# Don't track tags, except for Test 0,1,2
+tags/*
+!tags/Test0.png.txt
+!tags/Test1.png.txt
+!tags/Test2.png.txt
