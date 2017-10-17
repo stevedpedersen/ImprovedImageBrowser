@@ -36,7 +36,8 @@ class Model(QLabel):
 		self.appendIndex = 0
 		self.newFiles = {}
 
-	def initModel(self, windowWidth, files):
+	def initModel(self, windowWidth, files, thumbQty):
+		self.setThumbQty(thumbQty)
 		self.setDimensions(windowWidth)
 		self.setFiles(files)
 		self.generatePixmaps(files)
@@ -95,11 +96,14 @@ class Model(QLabel):
 			self.imageCount += 1
 			self.searchCount +=1
 
+			# end of full image search
 			if self.searchQty == self.searchCount:
 				# print('new leftmost and selected: ', self.getSelectedIndex() - self.searchQty)
 				self.setLeftmostIndex(self.getImageCount() - self.searchQty)
 				self.setSelectedIndex(self.getImageCount() - self.searchQty)
 				self.searchQty, self.searchCount = 0, 0
+				if self.view.statusText is not None:
+					self.view.statusText.setText('')	
 				self.view.setFocus()
 						
 			self.view.draw()
@@ -193,11 +197,17 @@ class Model(QLabel):
 	def getSelectedIndex(self):
 		return self.selectedIndex
 	def setSelectedIndex(self, index):
-		self.selectedIndex = index % self.getImageCount()
+		if self.getImageCount() > 0:
+			self.selectedIndex = index % self.getImageCount()
+		else:
+			self.selectedIndex = 0
 	def getLeftmostIndex(self):
 		return self.leftmostIndex
 	def setLeftmostIndex(self, index):
-		self.leftmostIndex = index % self.getImageCount()
+		if self.getImageCount() > 0:
+			self.leftmostIndex = index % self.getImageCount()
+		else:
+			self.leftmostIndex = 0
 	def getMode(self):
 		return self.mode
 	def setMode(self, mode):

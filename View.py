@@ -23,21 +23,22 @@ class View(QWidget):
 	
 	def __init__(self, windowWidth, files, safeMode, apiKeyExists):
 		super().__init__()
-		self.title = View.WINDOW_TITLE
+
 		self.model = Model.Model(self)
-		self.model.setThumbQty(View.THUMB_QTY)
-		self.model.initModel(windowWidth, files)
+		self.model.initModel(windowWidth, files, View.THUMB_QTY)
+
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
 		self.apiKey = self.model.getApiKey() if apiKeyExists else ''
 		self.safeMode, self.confirmedExit, self.confirmedDelete = safeMode, False, False
+		self.thumbModeComponents, self.fullModeComponents, self.statusText = [], [], None
+
 		self.initUI()
 		self.show()
 
 	def initUI(self):
-		self.setWindowTitle(self.title)
+		self.setWindowTitle(View.WINDOW_TITLE)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet(View.WINDOW_STYLE)	
-		self.showThumbModeComponents()
 		self.initTags()
 		self.draw() 
 		self.show()
@@ -47,35 +48,45 @@ class View(QWidget):
 	def draw(self):	
 		self.clearBrowser()
 		mode = self.model.getMode()
-		# TODO: Setup handler for left and select being too far apart
 		leftmost = self.model.getLeftmostIndex()
 		selected = self.model.getSelectedIndex()
 		
-		# Thumbnail Mode
-		if mode == 0:	
-			y = self.model.getWindowHeight() / 3
-			for i in range(View.THUMB_QTY):
-				x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
-				# Center the highlighted thumbnail when returning from full screen mode
-				thumb = (leftmost + i) % self.model.getImageCount()				
-				color = 'green'
-				if thumb == selected:
-					color = 'red'	
-				
-				self.attachPixmap(
-					thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color
-				)
-			self.showThumbModeComponents()
+		if self.model.getImageCount() > 0:
+			# Thumbnail Mode
+			if mode == 0:
+				if self.model.getImageCount() > 0:	
+					y = self.model.getWindowHeight() / 3
+					visibleThumbQty = View.THUMB_QTY if self.model.getImageCount() > 4 else self.model.getImageCount()
+					for i in range(visibleThumbQty):
+						x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
+						# Center the highlighted thumbnail when returning from full screen mode
+						thumb = (leftmost + i) % self.model.getImageCount()				
+						color = 'green'
+						if thumb == selected:
+							color = 'red'	
+						
+						self.attachPixmap(
+							thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color
+						)
+				self.showThumbModeComponents()
 
-		# Full Screen Mode		
-		elif mode == 1:
-			x = (self.model.getWindowWidth() - self.model.getFullWidth()) / 2
-			y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
-			self.attachPixmap(
-				selected, View.THUMB_QTY, x, y, self.model.getFullWidth(), self.model.getFullHeight(), self.model.getFullBorder(), 'red'
-			)
-			self.showFullModeComponents()
-			self.showTags()
+			# Full Screen Mode		
+			elif mode == 1:
+				if self.model.getImageCount() > 0:
+					x = (self.model.getWindowWidth() - self.model.getFullWidth()) / 2
+					y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
+					self.attachPixmap(
+						selected, View.THUMB_QTY, x, y, self.model.getFullWidth(), 
+						self.model.getFullHeight(), self.model.getFullBorder(), 'red'
+					)
+				self.showFullModeComponents()
+				self.showTags()
+		else:
+			if mode == 0:
+				self.showThumbModeComponents()
+			else:
+				self.showFullModeComponents()
+				self.showTags()
 
 	# Assigns an image to one of the labels
 	def attachPixmap(self, pindex, lindex, x, y, w, h, b, color):
@@ -138,7 +149,9 @@ class View(QWidget):
 				sys.exit()
 			else:
 				self.confirmedExit = True
-				self.statusText.setText('Are you sure you want to exit? (Press Exit again to confirm)')
+				self.statusText.setText(
+					'Are you sure you want to exit? (Press Exit again to confirm)'
+				)
 		else:
 			sys.exit()
 
@@ -150,7 +163,9 @@ class View(QWidget):
 				self.deleteNow()
 			else:
 				self.confirmedDelete = True
-				self.statusText.setText('Are you sure you want to delete this image? (Press Delete again to confirm)')
+				self.statusText.setText(
+					'Are you sure you want to delete this image? (Press Delete again to confirm)'
+				)
 		else:
 			self.deleteNow()		
 	def deleteNow(self):
@@ -196,11 +211,8 @@ class View(QWidget):
 
 	# Pre-load all tags for each image into a dictionary
 	def initTags(self):
-		self.tagTextBox = QLineEdit(self)	
-		self.fullModeComponents, self.tagDict = [], {}
-		self.fullModeComponents.append(self.tagTextBox)
-		self.tags = [] # QPushButton 'tags' List
-
+		# self.tagDict is all the tags, self.tags is the currently displayed tags
+		self.tagDict, self.tags = {}, []
 		# create a dict { imgFileName1: [tag1, tag2], ... }
 		imgFileNames = self.model.getFiles()
 		self.tagDict = {name: [] for name in imgFileNames}
@@ -221,13 +233,15 @@ class View(QWidget):
 	def showTags(self):
 		self.tags = []
 		padding = self.model.getFullBorder()
-		currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
+		if self.model.getImageCount() > 0:
+			# tag key is the image filename
+			currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
 
-		for i in range(len(self.tagDict[currTagKey])):
-			self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
-			self.tags[i].setStyleSheet(View.BUTTON_STYLE)
-			self.tags[i].move(padding/4, padding + padding*i*1.4)
-			self.tags[i].show()
+			for i in range(len(self.tagDict[currTagKey])):
+				self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
+				self.tags[i].setStyleSheet(View.BUTTON_STYLE)
+				self.tags[i].move(padding/4, padding + padding*i*1.4)
+				self.tags[i].show()
 
 	def hideTags(self):
 		for t in self.tags:
@@ -290,27 +304,28 @@ class View(QWidget):
 		short, medium, big = 0, 1, 2
 		tab, esc, enter = 16777217, 16777216, 16777220
 		currentMode = self.model.getMode()
+		hasImages = self.model.getImageCount() > 0
 		# print(event.key())
 
 		# Enter Full Screen Mode
-		if currentMode == thumb and event.key() == up:
+		if currentMode == thumb and event.key() == up and hasImages:
 			self.model.setMode(full)
 			self.playSound(medium)
 		# Exit Full Screen Mode			
-		elif currentMode == full and event.key() == down:
+		elif currentMode == full and event.key() == down and hasImages:
 			self.model.setMode(thumb)
 			self.model.setLeftmostIndex(self.model.getSelectedIndex() - 2)
 			self.playSound(medium)
 		# Left - Full Screen
-		elif currentMode == full and event.key() == left:
+		elif currentMode == full and event.key() == left and hasImages:
 			self.model.setSelectedIndex(self.model.getSelectedIndex() - 1)
 			self.playSound(short)
 		# Right - Full Screen		
-		elif currentMode == full and event.key() == right:
+		elif currentMode == full and event.key() == right and hasImages:
 			self.model.setSelectedIndex(self.model.getSelectedIndex() + 1)
 			self.playSound(short)
 		# Left - Thumbnail
-		elif currentMode == thumb and event.key() == left:
+		elif currentMode == thumb and event.key() == left and hasImages:
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected - 1) % self.model.getImageCount()
@@ -319,7 +334,7 @@ class View(QWidget):
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Right - Thumbnail		
-		elif currentMode == thumb and event.key() == right:
+		elif currentMode == thumb and event.key() == right and hasImages:
 			selected = self.model.getSelectedIndex()
 			leftmost = self.model.getLeftmostIndex()
 			newIndex = (selected + 1) % self.model.getImageCount()
@@ -328,14 +343,14 @@ class View(QWidget):
 			self.model.setSelectedIndex(newIndex)
 			self.playSound(short)
 		# Next set Left - Thumbnail		
-		elif currentMode == thumb and event.key() == scrollL:
+		elif currentMode == thumb and event.key() == scrollL and hasImages:
 			selected = self.model.getSelectedIndex()
 			newIndex = (selected - View.THUMB_QTY) % self.model.getImageCount()
 			self.model.setSelectedIndex(newIndex)
 			self.model.setLeftmostIndex(newIndex)
 			self.playSound(big)
 		# Next set Right - Thumbnail		
-		elif currentMode == thumb and event.key() == scrollR:
+		elif currentMode == thumb and event.key() == scrollR and hasImages:
 			selected = self.model.getSelectedIndex()
 			newIndex = (selected + View.THUMB_QTY) % self.model.getImageCount()
 			self.model.setSelectedIndex(newIndex)
@@ -348,7 +363,7 @@ class View(QWidget):
 			self.search()
 
 		# After user event update the view
-		self.draw()
+		self.draw()	
 
 	# Display Thumbnail Mode components such as search, exit, delete, etc.
 	def showThumbModeComponents(self):
@@ -356,63 +371,64 @@ class View(QWidget):
 		windowHeight = self.model.getWindowHeight()	
 		padding = windowWidth / 25 if windowWidth / 25 < 35 else 35
 
-		self.thumbModeComponents = []
+		# Create components if necessary
+		if len(self.thumbModeComponents) == 0:
 
-		# Elements requiring API Key
-		if len(self.apiKey) > 0:
-			self.searchTextBox = QLineEdit(self)	
-			self.searchTextBox.resize(windowWidth/3, padding*1.5)
-			self.searchTextBox.move(padding, windowHeight - padding*4)
-			self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
-			self.searchTextBox.setPlaceholderText('Search Flickr...')
-			self.maxResultBox = QLineEdit(self)	
-			self.maxResultBox.resize(windowWidth/20, padding*1.5)
-			self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
-			self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
-			self.maxResultBox.setText(str(int(View.MAX_RESULTS / 2)))
-			self.maxResultLabel = QLabel(self)
-			self.maxResultLabel.resize(windowWidth/6, padding*1.5)
-			self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
-			self.maxResultLabel.setText('Max Search Results')
+			# Elements requiring API Key
+			if len(self.apiKey) > 0:
+				self.searchTextBox = QLineEdit(self)	
+				self.searchTextBox.resize(windowWidth/3, padding*1.5)
+				self.searchTextBox.move(padding, windowHeight - padding*4)
+				self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
+				self.searchTextBox.setPlaceholderText('Search Flickr...')
+				self.maxResultBox = QLineEdit(self)	
+				self.maxResultBox.resize(windowWidth/20, padding*1.5)
+				self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
+				self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
+				self.maxResultBox.setText(str(int(View.MAX_RESULTS / 2)))
+				self.maxResultLabel = QLabel(self)
+				self.maxResultLabel.resize(windowWidth/6, padding*1.5)
+				self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
+				self.maxResultLabel.setText('Max Search Results')
 
-			self.searchButton = QPushButton('Search', self)
-			self.searchButton.clicked.connect(self.search)
-			self.searchButton.setStyleSheet(View.BUTTON_STYLE)
-			self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
-			self.testButton = QPushButton('Test', self)
-			self.testButton.clicked.connect(self.test)
-			self.testButton.setStyleSheet(View.BUTTON_STYLE)
-			self.testButton.resize(padding*2.6, padding)
-			self.testButton.move(padding, windowHeight - padding*2)
+				self.searchButton = QPushButton('Search', self)
+				self.searchButton.clicked.connect(self.search)
+				self.searchButton.setStyleSheet(View.BUTTON_STYLE)
+				self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
+				self.testButton = QPushButton('Test', self)
+				self.testButton.clicked.connect(self.test)
+				self.testButton.setStyleSheet(View.BUTTON_STYLE)
+				self.testButton.resize(padding*2.6, padding)
+				self.testButton.move(padding, windowHeight - padding*2)
+
+				self.thumbModeComponents.extend([
+					self.searchTextBox,self.searchButton,self.testButton,self.maxResultBox,self.maxResultLabel
+				])
+
+			# Elements not dependent on API Key
+			self.saveAllButton = QPushButton('Save', self)
+			self.saveAllButton.clicked.connect(self.saveAll)
+			self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
+			self.saveAllButton.resize(padding*2.6, padding)
+			self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*2)
+			self.exitButton = QPushButton('Exit', self)
+			self.exitButton.clicked.connect(self.exit)
+			self.exitButton.setStyleSheet(View.BUTTON_STYLE)
+			self.exitButton.resize(padding*2.6, padding)
+			self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*2)
+			self.deleteButton = QPushButton('Delete', self)
+			self.deleteButton.clicked.connect(self.delete)
+			self.deleteButton.setStyleSheet(View.BUTTON_STYLE)
+			self.deleteButton.resize(padding*2.6, padding)
+			self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*2)
+
+			self.statusText = QLabel(self)
+			self.statusText.resize(windowWidth-padding*2, padding)
+			self.statusText.move(padding, windowHeight - padding)		
 
 			self.thumbModeComponents.extend([
-				self.searchTextBox,self.searchButton,self.testButton,self.maxResultBox,self.maxResultLabel
+				self.saveAllButton, self.exitButton, self.deleteButton, self.statusText
 			])
-
-		# Elements not dependent on API Key
-		self.saveAllButton = QPushButton('Save', self)
-		self.saveAllButton.clicked.connect(self.saveAll)
-		self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
-		self.saveAllButton.resize(padding*2.6, padding)
-		self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*2)
-		self.exitButton = QPushButton('Exit', self)
-		self.exitButton.clicked.connect(self.exit)
-		self.exitButton.setStyleSheet(View.BUTTON_STYLE)
-		self.exitButton.resize(padding*2.6, padding)
-		self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*2)
-		self.deleteButton = QPushButton('Delete', self)
-		self.deleteButton.clicked.connect(self.delete)
-		self.deleteButton.setStyleSheet(View.BUTTON_STYLE)
-		self.deleteButton.resize(padding*2.6, padding)
-		self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*2)
-
-		self.statusText = QLabel(self)
-		self.statusText.resize(windowWidth-padding*2, padding)
-		self.statusText.move(padding, windowHeight - padding)		
-
-		self.thumbModeComponents.extend([
-			self.saveAllButton, self.exitButton, self.deleteButton, self.statusText
-		])
 
 		for t in self.thumbModeComponents:
 			t.show()
@@ -426,25 +442,31 @@ class View(QWidget):
 		padding = 30
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()
+		
+		# create components if necessary
+		if len(self.fullModeComponents) == 0:
+			
+			self.tagTextBox = QLineEdit(self)	
+			self.tagTextBox.resize(windowWidth/3, padding*1.5)
+			self.tagTextBox.move(padding, windowHeight - padding*2)
+			self.tagTextBox.setStyleSheet('border: 1px solid #868e96;')
+			self.tagTextBox.setPlaceholderText('Enter tag text...')
 
-		self.tagTextBox.resize(windowWidth/3, padding*1.5)
-		self.tagTextBox.move(padding, windowHeight - padding*2)
-		self.tagTextBox.setStyleSheet('border: 1px solid #868e96;')
-		self.tagTextBox.setPlaceholderText('Enter tag text...')
+			# connect button to functions add/saveTags
+			self.addButton = QPushButton('Add Tag', self)
+			self.saveTagsButton = QPushButton('Save All Tags', self)
+			self.addButton.clicked.connect(self.addTag)
+			self.saveTagsButton.clicked.connect(self.saveTags)
+			self.addButton.setStyleSheet(View.BUTTON_STYLE)
+			self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
 
-		# connect button to functions add/saveTags
-		self.addButton = QPushButton('Add Tag', self)
-		self.saveTagsButton = QPushButton('Save All Tags', self)
-		self.addButton.clicked.connect(self.addTag)
-		self.saveTagsButton.clicked.connect(self.saveTags)
-		self.addButton.setStyleSheet(View.BUTTON_STYLE)
-		self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
+			self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
+			self.saveTagsButton.move(windowWidth/1.5, windowHeight - padding*1.7)
 
-		self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
-		self.saveTagsButton.move(windowWidth/1.5, windowHeight - padding*1.7)
-
-		self.fullModeComponents.append(self.addButton)
-		self.fullModeComponents.append(self.saveTagsButton)
+			self.fullModeComponents.extend([
+				self.tagTextBox, self.addButton, self.saveTagsButton
+			])
+		
 		for t in self.fullModeComponents:
 			t.show()
 
