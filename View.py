@@ -39,6 +39,12 @@ class View(QWidget):
 		self.setWindowTitle(View.WINDOW_TITLE)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet(View.WINDOW_STYLE)	
+		self.infoBox = QLabel(self)
+		self.infoBox.resize(100, 30)
+		self.infoBox.move(self.model.getWindowWidth()- 120, 10)
+		self.infoBox.setStyleSheet('border: 1px solid #efefef; border-radius: 3px; background-color: #aff3ff; font-weight: bold; padding: 5px;')
+		self.infoBox.setText(str(self.model.getImageCount())+ ' images')		
+
 		self.initTags()
 		self.draw() 
 		self.show()
@@ -116,7 +122,7 @@ class View(QWidget):
 			fileNames = self.model.requestImages([photoUrl])
 			self.addToTagDict(fileNames)
 			self.model.addFiles(fileNames, [photoUrl])
-			self.statusText.setText('Results found for "'+query.replace('%20', ' ')+ '. Rendering...')				
+			self.statusText.setText('Results found for "'+query.replace('%20', ' ')+ '". Fetching...')				
 		else:
 			self.statusText.setText('No results found.')
 
@@ -200,7 +206,7 @@ class View(QWidget):
 			fileNames = self.model.requestImages(photoUrls)
 			self.addToTagDict(fileNames)
 			self.model.addFiles(fileNames, photoUrls)	
-			self.statusText.setText('Results found for "'+query.replace('%20', ' ')+ '. Rendering...')			
+			self.statusText.setText('Results found for "'+query.replace('%20', ' ')+ '". Fetching...')			
 		else:
 			self.statusText.setText('No results found.')		
 
@@ -485,6 +491,7 @@ class View(QWidget):
 		self.hideThumbModeComponents()
 		self.hideFullModeComponents()
 		self.confirmedExit = False
+		self.infoBox.setText(str(self.model.getImageCount())+ ' images')
 
 
 ###################    End View Class    ###################
