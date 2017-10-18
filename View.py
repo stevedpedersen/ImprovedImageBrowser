@@ -15,13 +15,20 @@ from PyQt5.QtMultimedia import QSoundEffect
 
 class View(QWidget):
 
+	THUMB = '#BFC8CE'
+	SEL 	= '#2F4A60'
+	BACKG = '#FFFFFF'
+	INFO 	= '#DAEBED'
+	BTNS 	= '#D3D3D3'	
+
 	WINDOW_TITLE = 'Image Browser'
 	THUMB_QTY = 5
 	MAX_RESULTS = 20
-	WINDOW_STYLE = 'background-color: #FFFFFF;'
-	BUTTON_STYLE = 'background-color: #d3d3d3; padding: 8px 20px; font-weight: bold;'
+	WINDOW_STYLE = 'background-color: ' + BACKG + ';'
+	BUTTON_STYLE = 'padding: 8px 20px; font-weight: bold; background-color: ' + BTNS + ';'
 	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&sort=relevance'
-	
+
+
 	def __init__(self, windowWidth, files, safeMode, apiKeyExists):
 		super().__init__()
 
@@ -40,10 +47,16 @@ class View(QWidget):
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet(View.WINDOW_STYLE)	
 		self.infoBox = QLabel(self)
-		self.infoBox.resize(100, 30)
-		self.infoBox.move(self.model.getWindowWidth()- 120, 10)
-		self.infoBox.setStyleSheet('border: 1px solid #efefef; border-radius: 3px; background-color: #aff3ff; font-weight: bold; padding: 5px;')
-		self.infoBox.setText(str(self.model.getImageCount())+ ' images')		
+		self.infoBox.resize(150, 50)
+		self.infoBox.move(self.model.getWindowWidth()- 170, 10)
+		self.infoBox.setAlignment(Qt.AlignCenter)
+		self.infoBox.setStyleSheet(
+			'border: 4px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+			'padding: 5px; background-color: '+View.INFO+';'
+		)
+		# self.infoBox.setText(
+		# 	'Image '+str(self.model.getSelectedIndex())+' of '+ str(self.model.getImageCount())
+		# )		
 
 		self.initTags()
 		self.draw() 
@@ -64,12 +77,14 @@ class View(QWidget):
 					y = self.model.getWindowHeight() / 3
 					visibleThumbQty = View.THUMB_QTY if self.model.getImageCount() > View.THUMB_QTY-1 else self.model.getImageCount()
 					for i in range(visibleThumbQty):
-						x = int(((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth())
+						x = int(
+							((self.model.getWindowWidth() - self.model.getThumbWidth()*View.THUMB_QTY)/2) + i*self.model.getThumbWidth()
+						)
 						# Center the highlighted thumbnail when returning from full screen mode
 						thumb = (leftmost + i) % self.model.getImageCount()				
-						color = 'green'
+						color = View.THUMB
 						if thumb == selected:
-							color = 'red'	
+							color = View.SEL	
 						
 						self.attachPixmap(
 							thumb, i, x, y, self.model.getThumbWidth(), self.model.getThumbHeight(), self.model.getThumbBorder(), color
@@ -83,7 +98,7 @@ class View(QWidget):
 					y = (self.model.getWindowHeight() - self.model.getFullHeight()) / 2
 					self.attachPixmap(
 						selected, View.THUMB_QTY, x, y, self.model.getFullWidth(), 
-						self.model.getFullHeight(), self.model.getFullBorder(), 'red'
+						self.model.getFullHeight(), self.model.getFullBorder(), View.SEL
 					)
 				self.showFullModeComponents()
 				self.showTags()
@@ -244,8 +259,12 @@ class View(QWidget):
 			currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
 
 			for i in range(len(self.tagDict[currTagKey])):
-				self.tags.append(QPushButton(self.tagDict[currTagKey][i], self))
-				self.tags[i].setStyleSheet(View.BUTTON_STYLE)
+				self.tags.append(QLabel(self.tagDict[currTagKey][i], self))
+				# self.tags[i].setStyleSheet(View.BUTTON_STYLE)	
+				self.tags[i].setStyleSheet(
+					'border: 4px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+					'padding: 5px; background-color: '+View.INFO+';'
+				)					
 				self.tags[i].move(padding/4, padding + padding*i*1.4)
 				self.tags[i].show()
 
@@ -386,19 +405,24 @@ class View(QWidget):
 			# Elements requiring API Key
 			if len(self.apiKey) > 0:
 				self.searchTextBox = QLineEdit(self)	
-				self.searchTextBox.resize(windowWidth/3, padding*1.5)
+				self.searchTextBox.resize(windowWidth/3, padding*1.3)
 				self.searchTextBox.move(padding, windowHeight - padding*4)
-				self.searchTextBox.setStyleSheet('border: 1px solid #868e96;')	
+				self.searchTextBox.setStyleSheet(
+					'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
+				)					
 				self.searchTextBox.setPlaceholderText('Search Flickr...')
 				self.maxResultBox = QLineEdit(self)	
-				self.maxResultBox.resize(windowWidth/20, padding*1.5)
+				self.maxResultBox.resize(windowWidth/20, padding*1.3)
 				self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
-				self.maxResultBox.setStyleSheet('border: 1px solid #868e96;')	
+				self.maxResultBox.setStyleSheet(
+					'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
+				)		
 				self.maxResultBox.setText(str(int(View.MAX_RESULTS / 2)))
 				self.maxResultLabel = QLabel(self)
-				self.maxResultLabel.resize(windowWidth/6, padding*1.5)
+				self.maxResultLabel.resize(windowWidth/6, padding*1.3)
 				self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
 				self.maxResultLabel.setText('Max Search Results')
+				self.maxResultLabel.setStyleSheet('font-weight: bold; text-decoration: underline;')
 
 				self.searchButton = QPushButton('Search', self)
 				self.searchButton.clicked.connect(self.search)
@@ -458,9 +482,10 @@ class View(QWidget):
 			self.tagTextBox = QLineEdit(self)	
 			self.tagTextBox.resize(windowWidth/3, padding*1.5)
 			self.tagTextBox.move(padding, windowHeight - padding*2)
-			self.tagTextBox.setStyleSheet('border: 1px solid #868e96;')
 			self.tagTextBox.setPlaceholderText('Enter tag text...')
-
+			self.tagTextBox.setStyleSheet(
+				'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
+			)	
 			# connect button to functions add/saveTags
 			self.addButton = QPushButton('Add Tag', self)
 			self.saveTagsButton = QPushButton('Save All Tags', self)
@@ -491,7 +516,9 @@ class View(QWidget):
 		self.hideThumbModeComponents()
 		self.hideFullModeComponents()
 		self.confirmedExit = False
-		self.infoBox.setText(str(self.model.getImageCount())+ ' images')
+		self.infoBox.setText(
+			'Image '+str(self.model.getSelectedIndex())+' of '+ str(self.model.getImageCount())
+		)					
 
 
 ###################    End View Class    ###################
