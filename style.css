@@ -1,0 +1,15 @@
+/*	Stylesheet for ImageBrowser
+	Comments must begin with /* on each line	
+
+
+	THUMB = '#BFC8CE'
+	SEL 	= '#2F4A60'
+	BACKG = '#FFFFFF'
+	INFO 	= '#DAEBED'
+	BTNS 	= '#D3D3D3'	
+	AUDIO_ON = '#E2EFDA'
+	AUDIO_OFF = '#EFDFDE' 
+*/
+QPushButton:hover { border: none; } 
+QPushButton#mute_button:hover { color: red; } 
+QLabel#thumb_container { border: #2F4A60; background-color: yellow;}

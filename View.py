@@ -20,6 +20,8 @@ class View(QWidget):
 	BACKG = '#FFFFFF'
 	INFO 	= '#DAEBED'
 	BTNS 	= '#D3D3D3'	
+	AUDIO_ON = '#E2EFDA'
+	AUDIO_OFF = '#EFDFDE'
 
 	WINDOW_TITLE = 'Image Browser'
 	THUMB_QTY = 5
@@ -37,31 +39,47 @@ class View(QWidget):
 
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
 		self.apiKey = self.model.getApiKey() if apiKeyExists else ''
-		self.safeMode, self.confirmedExit, self.confirmedDelete = safeMode, False, False
+		self.safeMode, self.confirmedExit, self.confirmedDelete, self.audioOn = safeMode, False, False, True
 		self.thumbModeComponents, self.fullModeComponents, self.statusText = [], [], None
 
 		self.initUI()
 
 	def initUI(self):
 		self.setWindowTitle(View.WINDOW_TITLE)
-		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
+		self.setGeometry(1000, 500, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet(View.WINDOW_STYLE)	
 		self.infoBox = QLabel(self)
-		self.infoBox.resize(150, 50)
-		self.infoBox.move(self.model.getWindowWidth()- 170, 10)
+		self.infoBox.resize(150, 35)
+		self.infoBox.move(self.model.getWindowWidth()- 155, 5)
 		self.infoBox.setAlignment(Qt.AlignCenter)
 		self.infoBox.setStyleSheet(
-			'border: 4px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
 			'padding: 5px; background-color: '+View.INFO+';'
 		)
-		# self.infoBox.setText(
-		# 	'Image '+str(self.model.getSelectedIndex())+' of '+ str(self.model.getImageCount())
-		# )		
+
+		self.muteButton = QPushButton('Audio ON', self)
+		self.muteButton.clicked.connect(self.mute)
+		self.muteButton.setObjectName('mute_button')
+		self.muteButton.setStyleSheet(
+			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+			'padding: 5px; background-color: '+View.AUDIO_ON+';'
+		)
+		self.muteButton.resize(85, 35)
+		self.muteButton.move(self.model.getWindowWidth()- 90, 45)
 
 		self.initTags()
 		self.draw() 
 		self.show()
 		self.setFocus()
+		self.loadStyles()
+
+	def loadStyles(self):
+		style = ''
+		with open('style.css') as f:
+			for line in f:
+				style += line
+				print(line)
+		self.setStyleSheet(style)
 
 	# Attach images to labels in thumbnail or fullscreen mode
 	def draw(self):	
@@ -119,7 +137,7 @@ class View(QWidget):
 		self.labels[lindex].setPixmap(self.model.getPixmap(mode, pindex))
 		self.labels[lindex].setAlignment(Qt.AlignCenter)
 		self.labels[lindex].setGeometry(QRect(x, y, w, h))
-		self.labels[lindex].setStyleSheet('border: ' + str(b) + 'px solid '+ color)
+		self.labels[lindex].setStyleSheet('border: ' + str(b) + 'px solid '+ color + ';')
 		self.labels[lindex].clicked.connect(self.mouseSel)
 		self.labels[lindex].show()
 
@@ -253,7 +271,7 @@ class View(QWidget):
 	# Displays all tags for currently selected image
 	def showTags(self):
 		self.tags = []
-		padding = self.model.getFullBorder()
+		padding = 24 # self.model.getFullBorder()
 		if self.model.getImageCount() > 0:
 			# tag key is the image filename
 			currTagKey = self.model.getFiles()[self.model.getSelectedIndex()]
@@ -262,10 +280,10 @@ class View(QWidget):
 				self.tags.append(QLabel(self.tagDict[currTagKey][i], self))
 				# self.tags[i].setStyleSheet(View.BUTTON_STYLE)	
 				self.tags[i].setStyleSheet(
-					'border: 4px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+					'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
 					'padding: 5px; background-color: '+View.INFO+';'
 				)					
-				self.tags[i].move(padding/4, padding + padding*i*1.4)
+				self.tags[i].move(padding/4, padding/4 + padding*i*1.4)
 				self.tags[i].show()
 
 	def hideTags(self):
@@ -301,19 +319,30 @@ class View(QWidget):
 
 	# Type is 0=short, 1=medium, 2=long
 	def playSound(self, soundType = 0):
-		if soundType == 0:
-			soundFile = 'short.wav'
-		elif soundType == 1:
-			soundFile = 'medium.wav'
-		elif soundType == 2:
-			soundFile = 'long.wav'
+		if self.audioOn:
+			if soundType == 0:
+				soundFile = 'short.wav'
+			elif soundType == 1:
+				soundFile = 'medium.wav'
+			elif soundType == 2:
+				soundFile = 'long.wav'
 
-		self.sound = QSoundEffect()
-		self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
-		self.sound.setLoopCount(1)
-		# don't play sounds in Safe Mode
-		if not self.safeMode:
+			self.sound = QSoundEffect()
+			self.sound.setSource(QUrl.fromLocalFile(os.path.join('audio', soundFile)))
+			self.sound.setLoopCount(1)
 			self.sound.play()	
+
+	def mute(self):
+		self.audioOn = not self.audioOn
+		if self.audioOn:
+			color, text = View.AUDIO_ON, 'Audio ON'
+		else:
+			color, text = View.AUDIO_OFF, 'Audio OFF'
+		self.muteButton.setStyleSheet(
+			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+			'padding: 5px; background-color: '+color+';'
+		)
+		self.muteButton.setText(text)
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label):
@@ -456,11 +485,16 @@ class View(QWidget):
 			self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*2)
 
 			self.statusText = QLabel(self)
-			self.statusText.resize(windowWidth-padding*2, padding)
+			self.statusText.resize(windowWidth-padding*8, padding)
 			self.statusText.move(padding, windowHeight - padding)		
 
+			self.thumbContainer = QLabel(self)
+			self.thumbContainer.resize(windowWidth - padding*2, windowHeight/4)
+			self.thumbContainer.move(padding, windowHeight - windowHeight/4 )
+			self.thumbContainer.setObjectName('thumb_container')
+
 			self.thumbModeComponents.extend([
-				self.saveAllButton, self.exitButton, self.deleteButton, self.statusText
+				self.saveAllButton, self.exitButton, self.deleteButton, self.statusText, self.thumbContainer
 			])
 
 		for t in self.thumbModeComponents:
