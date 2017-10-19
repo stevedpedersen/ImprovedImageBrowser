@@ -36,7 +36,7 @@ class View(QWidget):
 		self.labels = self.model.generateLabels(self, View.THUMB_QTY + 1)
 		self.apiKey = self.model.getApiKey() if apiKeyExists else ''
 		self.safeMode, self.confirmedExit, self.confirmedDelete, self.audioOn = safeMode, False, False, True
-		self.thumbModeComponents, self.fullModeComponents, self.statusText = [], [], None
+		self.thumbModeComponents,self.fullModeComponents,self.windowComponents,self.statusText = [],[],[],None
 
 		self.initUI()
 
@@ -44,16 +44,7 @@ class View(QWidget):
 		self.setWindowTitle(View.WINDOW_TITLE)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setObjectName('main_window')	
-		self.infoBox = QLabel(self)
-		self.infoBox.resize(150, 35)
-		self.infoBox.move(self.model.getWindowWidth()- 155, 5)
-		self.infoBox.setAlignment(Qt.AlignCenter)
-		self.infoBox.setObjectName('info_box')
-		self.muteButton = QPushButton('Mute', self)
-		self.muteButton.clicked.connect(self.mute)
-		self.muteButton.setObjectName('mute_button')
-		self.muteButton.resize(85, 35)
-		self.muteButton.move(self.model.getWindowWidth()- 90, 45)
+		self.showWindowComponents()
 
 		self.initTags()
 		self.draw() 
@@ -322,7 +313,6 @@ class View(QWidget):
 			obj_name, text = 'unmute_button', 'Unmute'
 		self.muteButton.setObjectName(obj_name)	
 		self.muteButton.setText(text)
-
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label):
@@ -331,8 +321,8 @@ class View(QWidget):
 			self.playSound(1)
 			self.model.setSelectedIndex(label.getPixIndex())
 		self.setFocus()
-		self.draw()		
-	
+		self.draw()	
+		
 	# Handles key events and responds according to current browser state
 	def keyPressEvent(self, event):
 		up, down, left, right = 16777235, 16777237, 16777234, 16777236
@@ -402,6 +392,29 @@ class View(QWidget):
 
 		# After user event update the view
 		self.draw()	
+
+	def showWindowComponents(self):
+		if len(self.windowComponents) == 0:
+			self.infoBox = QLabel(self)
+			self.infoBox.resize(150, 35)
+			self.infoBox.move(self.model.getWindowWidth()- 155, 5)
+			self.infoBox.setAlignment(Qt.AlignCenter)
+			self.infoBox.setObjectName('info_box')
+
+			self.muteButton = QPushButton('Mute', self)
+			self.muteButton.clicked.connect(self.mute)
+			self.muteButton.setObjectName('mute_button')
+			self.muteButton.resize(85, 35)
+			self.muteButton.move(self.model.getWindowWidth()- 90, 45)		
+
+			self.windowComponents.extend([self.infoBox, self.muteButton])
+		
+		for c in self.windowComponents:
+			c.show()
+
+	def hideWindowComponents(self):
+		for c in self.windowComponents:
+			c.hide()
 
 	# Display Thumbnail Mode components such as search, exit, delete, etc.
 	def showThumbModeComponents(self):
