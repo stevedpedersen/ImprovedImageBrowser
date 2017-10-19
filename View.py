@@ -142,24 +142,27 @@ class View(QWidget):
 	# Save any new images found from the web to data folder.
 	# Also save any new tags associated with new images.
 	def saveAll(self):
-		newFiles = self.model.getNewFiles()
-		for file, url in newFiles.items():
-			with open('data/' + file, 'wb') as handle:
-				response = requests.get(url, stream=True)
+		if self.model.getImageCount() != 0:
+			newFiles = self.model.getNewFiles()
+			for file, url in newFiles.items():
+				with open('data/' + file, 'wb') as handle:
+					response = requests.get(url, stream=True)
 
-				if not response.ok:
-					print(response)
+					if not response.ok:
+						print(response)
 
-				for block in response.iter_content(1024):
-					if not block:
-						break
-					handle.write(block)
+					for block in response.iter_content(1024):
+						if not block:
+							break
+						handle.write(block)
 
-		# files are no longer new, so update the Model
-		self.model.clearNewFiles()
+			# files are no longer new, so update the Model
+			self.model.clearNewFiles()
 
-		self.saveTags()
-		self.statusText.setText(str(len(newFiles)) + ' new images saved.')
+			self.saveTags()
+			self.statusText.setText(str(len(newFiles)) + ' new images saved.')
+		else:
+			self.statusText.setText('There are no images to be saved.')
 		
 	# Exit program in safe mode with confirmation else without
 	def exit(self):
@@ -177,16 +180,19 @@ class View(QWidget):
 	# Deletes an image file, it's tags and updates the browser
 	# Prompts for confirmation if in safe mode
 	def delete(self):
-		if self.safeMode:
-			if self.confirmedDelete:
-				self.deleteNow()
+		if self.model.getImageCount() != 0:
+			if self.safeMode:
+				if self.confirmedDelete:
+					self.deleteNow()
+				else:
+					self.confirmedDelete = True
+					self.statusText.setText(
+						'Are you sure you want to delete this image? (Press Delete again to confirm)'
+					)
 			else:
-				self.confirmedDelete = True
-				self.statusText.setText(
-					'Are you sure you want to delete this image? (Press Delete again to confirm)'
-				)
+				self.deleteNow()	
 		else:
-			self.deleteNow()		
+			self.statusText.setText('There are no images to be deleted.')	
 	def deleteNow(self):
 		index = self.model.getSelectedIndex()
 		filename = self.model.getFile(index)
@@ -309,13 +315,11 @@ class View(QWidget):
 			self.sound.play()	
 
 	def mute(self):
-		# print('Audio was '+('ON' if self.audioOn else 'OFF') + ' before clicking.')
 		self.audioOn = not self.audioOn
 		if self.audioOn:
 			obj_name, text = 'mute_button', 'Mute'
 		else:
 			obj_name, text = 'unmute_button', 'Unmute'
-		print(self.muteButton.styleSheet())
 		self.muteButton.setObjectName(obj_name)	
 		self.muteButton.setText(text)
 
