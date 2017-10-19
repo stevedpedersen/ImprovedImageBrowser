@@ -324,6 +324,7 @@ class View(QWidget):
 	def mouseSel(self, label):
 		if self.model.getMode() == 0:
 			self.model.setMode(1)
+			self.playSound(1)
 			self.model.setSelectedIndex(label.getPixIndex())
 		self.setFocus()
 		self.draw()		
