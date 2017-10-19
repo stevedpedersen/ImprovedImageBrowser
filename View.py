@@ -20,13 +20,10 @@ class View(QWidget):
 	BACKG = '#FFFFFF'
 	INFO 	= '#DAEBED'
 	BTNS 	= '#D3D3D3'	
-	AUDIO_ON = '#E2EFDA'
-	AUDIO_OFF = '#EFDFDE'
 
 	WINDOW_TITLE = 'Image Browser'
 	THUMB_QTY = 5
 	MAX_RESULTS = 20
-	WINDOW_STYLE = 'background-color: ' + BACKG + ';'
 	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&sort=relevance'
 
 
@@ -46,23 +43,15 @@ class View(QWidget):
 	def initUI(self):
 		self.setWindowTitle(View.WINDOW_TITLE)
 		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
-		self.setStyleSheet(View.WINDOW_STYLE)	
+		self.setObjectName('main_window')	
 		self.infoBox = QLabel(self)
 		self.infoBox.resize(150, 35)
 		self.infoBox.move(self.model.getWindowWidth()- 155, 5)
 		self.infoBox.setAlignment(Qt.AlignCenter)
-		self.infoBox.setStyleSheet(
-			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
-			'padding: 5px; background-color: '+View.INFO+';'
-		)
-
+		self.infoBox.setObjectName('info_box')
 		self.muteButton = QPushButton('Mute', self)
 		self.muteButton.clicked.connect(self.mute)
 		self.muteButton.setObjectName('mute_button')
-		self.muteButton.setStyleSheet(
-			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
-			'padding: 5px; background-color: '+View.AUDIO_ON+';'
-		)
 		self.muteButton.resize(85, 35)
 		self.muteButton.move(self.model.getWindowWidth()- 90, 45)
 
@@ -71,14 +60,6 @@ class View(QWidget):
 		self.show()
 		self.setFocus()
 		self.loadStyles()
-
-	def loadStyles(self):
-		style = ''
-		with open('style.css') as f:
-			for line in f:
-				style += line
-				# print(line)
-		self.setStyleSheet(style)
 
 	# Attach images to labels in thumbnail or fullscreen mode
 	def draw(self):	
@@ -277,11 +258,7 @@ class View(QWidget):
 
 			for i in range(len(self.tagDict[currTagKey])):
 				self.tags.append(QLabel(self.tagDict[currTagKey][i], self))
-				# self.tags[i].setStyleSheet(View.BUTTON_STYLE)	
-				self.tags[i].setStyleSheet(
-					'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
-					'padding: 5px; background-color: '+View.INFO+';'
-				)					
+				self.tags[i].setObjectName('tag')					
 				self.tags[i].move(padding/4, padding/4 + padding*i*1.4)
 				self.tags[i].show()
 
@@ -335,9 +312,9 @@ class View(QWidget):
 		# print('Audio was '+('ON' if self.audioOn else 'OFF') + ' before clicking.')
 		self.audioOn = not self.audioOn
 		if self.audioOn:
-			obj_name, color, text = 'mute_button', View.AUDIO_ON, 'Mute'
+			obj_name, text = 'mute_button', 'Mute'
 		else:
-			obj_name, color, text = 'unmute_button', View.AUDIO_OFF, 'Unmute'
+			obj_name, text = 'unmute_button', 'Unmute'
 		print(self.muteButton.styleSheet())
 		self.muteButton.setObjectName(obj_name)	
 		self.muteButton.setText(text)
@@ -453,7 +430,6 @@ class View(QWidget):
 				self.maxResultLabel.move(windowWidth/1.4, windowHeight - padding*4)
 				self.maxResultLabel.setText('Max Search Results')
 				self.maxResultLabel.setObjectName('max_result_label')
-				# self.maxResultLabel.setStyleSheet('font-weight: bold; text-decoration: underline;')
 
 				self.searchButton = QPushButton('Search', self)
 				self.searchButton.clicked.connect(self.search)
@@ -516,16 +492,11 @@ class View(QWidget):
 			self.tagTextBox.move(padding, windowHeight - padding*2)
 			self.tagTextBox.setPlaceholderText('Enter tag text...')
 			self.tagTextBox.setObjectName('text_box')
-			# self.tagTextBox.setStyleSheet(
-			# 	'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
-			# )	
-			# connect button to functions add/saveTags
+
 			self.addButton = QPushButton('Add Tag', self)
 			self.saveTagsButton = QPushButton('Save All Tags', self)
 			self.addButton.clicked.connect(self.addTag)
 			self.saveTagsButton.clicked.connect(self.saveTags)
-			# self.addButton.setStyleSheet(View.BUTTON_STYLE)
-			# self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
 			self.addButton.resize(padding*2.6, padding)
 			self.saveTagsButton.resize(padding*3.3, padding)
 			self.addButton.setObjectName('btn')
@@ -545,6 +516,15 @@ class View(QWidget):
 		for t in self.fullModeComponents:
 			t.hide()
 
+	# Opens css stylesheet and applies it to Imagebrowser elements
+	def loadStyles(self):
+		style = ''
+		with open('style.css') as f:
+			for line in f:
+				style += line
+				# print(line)
+		self.setStyleSheet(style)
+
 	# Hide any visible contents on browser window
 	def clearBrowser(self):
 		for i in range(View.THUMB_QTY + 1):
@@ -557,5 +537,3 @@ class View(QWidget):
 			'Image '+str(self.model.getSelectedIndex())+' of '+ str(self.model.getImageCount())
 		)					
 
-
-###################    End View Class    ###################
