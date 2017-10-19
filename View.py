@@ -60,10 +60,10 @@ class View(QWidget):
 		self.muteButton = QPushButton('Audio ON', self)
 		self.muteButton.clicked.connect(self.mute)
 		self.muteButton.setObjectName('mute_button')
-		self.muteButton.setStyleSheet(
-			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
-			'padding: 5px; background-color: '+View.AUDIO_ON+';'
-		)
+		# self.muteButton.setStyleSheet(
+		# 	'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+		# 	'padding: 5px; background-color: '+View.AUDIO_ON+';'
+		# )
 		self.muteButton.resize(85, 35)
 		self.muteButton.move(self.model.getWindowWidth()- 90, 45)
 
@@ -78,7 +78,7 @@ class View(QWidget):
 		with open('style.css') as f:
 			for line in f:
 				style += line
-				print(line)
+				# print(line)
 		self.setStyleSheet(style)
 
 	# Attach images to labels in thumbnail or fullscreen mode
@@ -333,16 +333,16 @@ class View(QWidget):
 			self.sound.play()	
 
 	def mute(self):
+		print('Audio was '+('ON' if self.audioOn else 'OFF') + ' before clicking.')
 		self.audioOn = not self.audioOn
 		if self.audioOn:
-			color, text = View.AUDIO_ON, 'Audio ON'
+			obj_name, color, text = 'mute_button', View.AUDIO_ON, 'Mute'
 		else:
-			color, text = View.AUDIO_OFF, 'Audio OFF'
-		self.muteButton.setStyleSheet(
-			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
-			'padding: 5px; background-color: '+color+';'
-		)
+			obj_name, color, text = 'unmute_button', View.AUDIO_OFF, 'Unmute'
+		self.muteButton.setObjectName('')
+		self.muteButton.setObjectName(obj_name)	
 		self.muteButton.setText(text)
+		print('Audio was '+('ON' if self.audioOn else 'OFF') + ' after clicking.')
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label):
@@ -431,6 +431,11 @@ class View(QWidget):
 		# Create components if necessary
 		if len(self.thumbModeComponents) == 0:
 
+			self.thumbContainer = QLabel(self)
+			self.thumbContainer.resize(windowWidth - padding/2, windowHeight/4)
+			self.thumbContainer.move(padding/4, windowHeight - windowHeight/4 - 5)
+			self.thumbContainer.setObjectName('thumb_container')
+
 			# Elements requiring API Key
 			if len(self.apiKey) > 0:
 				self.searchTextBox = QLineEdit(self)	
@@ -487,11 +492,6 @@ class View(QWidget):
 			self.statusText = QLabel(self)
 			self.statusText.resize(windowWidth-padding*8, padding)
 			self.statusText.move(padding, windowHeight - padding)		
-
-			self.thumbContainer = QLabel(self)
-			self.thumbContainer.resize(windowWidth - padding*2, windowHeight/4)
-			self.thumbContainer.move(padding, windowHeight - windowHeight/4 )
-			self.thumbContainer.setObjectName('thumb_container')
 
 			self.thumbModeComponents.extend([
 				self.saveAllButton, self.exitButton, self.deleteButton, self.statusText, self.thumbContainer

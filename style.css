@@ -11,5 +11,8 @@
 	AUDIO_OFF = '#EFDFDE' 
 */
 QPushButton:hover { border: none; } 
-QPushButton#mute_button:hover { color: red; } 
-QLabel#thumb_container { border: #2F4A60; background-color: yellow;}
+QPushButton#mute_button { background-color: #E2EFDA; border: 2px solid #2F4A60; border-radius: 5px; padding: 5px; font-weight: bold; }
+QPushButton#unmute_button { background-color: #EFDFDE; border: 2px solid #2F4A60; border-radius: 5px; padding: 5px; font-weight: bold; } 
+QPushButton#mute_button:hover { color: red; }
+QPushButton#unmute_button:hover { color: green; } 
+QLabel#thumb_container { border: 3px solid #2F4A60; border-radius: 5px; background-color: #DAEBED;}
