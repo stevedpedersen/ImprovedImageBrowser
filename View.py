@@ -27,7 +27,6 @@ class View(QWidget):
 	THUMB_QTY = 5
 	MAX_RESULTS = 20
 	WINDOW_STYLE = 'background-color: ' + BACKG + ';'
-	BUTTON_STYLE = 'padding: 8px 20px; font-weight: bold; background-color: ' + BTNS + ';'
 	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&sort=relevance'
 
 
@@ -46,7 +45,7 @@ class View(QWidget):
 
 	def initUI(self):
 		self.setWindowTitle(View.WINDOW_TITLE)
-		self.setGeometry(1000, 500, self.model.getWindowWidth(), self.model.getWindowHeight())
+		self.setGeometry(0, 0, self.model.getWindowWidth(), self.model.getWindowHeight())
 		self.setStyleSheet(View.WINDOW_STYLE)	
 		self.infoBox = QLabel(self)
 		self.infoBox.resize(150, 35)
@@ -57,13 +56,13 @@ class View(QWidget):
 			'padding: 5px; background-color: '+View.INFO+';'
 		)
 
-		self.muteButton = QPushButton('Audio ON', self)
+		self.muteButton = QPushButton('Mute', self)
 		self.muteButton.clicked.connect(self.mute)
 		self.muteButton.setObjectName('mute_button')
-		# self.muteButton.setStyleSheet(
-		# 	'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
-		# 	'padding: 5px; background-color: '+View.AUDIO_ON+';'
-		# )
+		self.muteButton.setStyleSheet(
+			'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold;'
+			'padding: 5px; background-color: '+View.AUDIO_ON+';'
+		)
 		self.muteButton.resize(85, 35)
 		self.muteButton.move(self.model.getWindowWidth()- 90, 45)
 
@@ -333,16 +332,16 @@ class View(QWidget):
 			self.sound.play()	
 
 	def mute(self):
-		print('Audio was '+('ON' if self.audioOn else 'OFF') + ' before clicking.')
+		# print('Audio was '+('ON' if self.audioOn else 'OFF') + ' before clicking.')
 		self.audioOn = not self.audioOn
 		if self.audioOn:
 			obj_name, color, text = 'mute_button', View.AUDIO_ON, 'Mute'
 		else:
 			obj_name, color, text = 'unmute_button', View.AUDIO_OFF, 'Unmute'
-		self.muteButton.setObjectName('')
+		print(self.muteButton.styleSheet())
 		self.muteButton.setObjectName(obj_name)	
 		self.muteButton.setText(text)
-		print('Audio was '+('ON' if self.audioOn else 'OFF') + ' after clicking.')
+
 		
 	# Full screen mode on clicked label while in thumbnail mode
 	def mouseSel(self, label):
@@ -441,32 +440,31 @@ class View(QWidget):
 				self.searchTextBox = QLineEdit(self)	
 				self.searchTextBox.resize(windowWidth/3, padding*1.3)
 				self.searchTextBox.move(padding, windowHeight - padding*4)
-				self.searchTextBox.setStyleSheet(
-					'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
-				)					
+				self.searchTextBox.setObjectName('text_box')			
 				self.searchTextBox.setPlaceholderText('Search Flickr...')
 				self.maxResultBox = QLineEdit(self)	
-				self.maxResultBox.resize(windowWidth/20, padding*1.3)
+				self.maxResultBox.resize(windowWidth/15, padding*1.3)
 				self.maxResultBox.move(windowWidth/1.6, windowHeight - padding*4)
-				self.maxResultBox.setStyleSheet(
-					'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
-				)		
+				self.maxResultBox.setObjectName('text_box')
+
 				self.maxResultBox.setText(str(int(View.MAX_RESULTS / 2)))
 				self.maxResultLabel = QLabel(self)
 				self.maxResultLabel.resize(windowWidth/6, padding*1.3)
-				self.maxResultLabel.move(windowWidth/1.45, windowHeight - padding*4)
+				self.maxResultLabel.move(windowWidth/1.4, windowHeight - padding*4)
 				self.maxResultLabel.setText('Max Search Results')
-				self.maxResultLabel.setStyleSheet('font-weight: bold; text-decoration: underline;')
+				self.maxResultLabel.setObjectName('max_result_label')
+				# self.maxResultLabel.setStyleSheet('font-weight: bold; text-decoration: underline;')
 
 				self.searchButton = QPushButton('Search', self)
 				self.searchButton.clicked.connect(self.search)
-				self.searchButton.setStyleSheet(View.BUTTON_STYLE)
+				self.searchButton.resize(padding*2.6, padding)
 				self.searchButton.move(windowWidth/2.5, windowHeight - padding*3.8)
+				self.searchButton.setObjectName('btn')
 				self.testButton = QPushButton('Test', self)
 				self.testButton.clicked.connect(self.test)
-				self.testButton.setStyleSheet(View.BUTTON_STYLE)
-				self.testButton.resize(padding*2.6, padding)
+				self.testButton.resize(padding*2.9, padding)
 				self.testButton.move(padding, windowHeight - padding*2)
+				self.testButton.setObjectName('btn')
 
 				self.thumbModeComponents.extend([
 					self.searchTextBox,self.searchButton,self.testButton,self.maxResultBox,self.maxResultLabel
@@ -475,19 +473,19 @@ class View(QWidget):
 			# Elements not dependent on API Key
 			self.saveAllButton = QPushButton('Save', self)
 			self.saveAllButton.clicked.connect(self.saveAll)
-			self.saveAllButton.setStyleSheet(View.BUTTON_STYLE)
-			self.saveAllButton.resize(padding*2.6, padding)
-			self.saveAllButton.move(padding+padding*2.6, windowHeight - padding*2)
+			self.saveAllButton.resize(padding*2.9, padding)
+			self.saveAllButton.move(padding+padding*2.9, windowHeight - padding*2)
+			self.saveAllButton.setObjectName('btn')
 			self.exitButton = QPushButton('Exit', self)
 			self.exitButton.clicked.connect(self.exit)
-			self.exitButton.setStyleSheet(View.BUTTON_STYLE)
-			self.exitButton.resize(padding*2.6, padding)
-			self.exitButton.move(padding+2*padding*2.6, windowHeight - padding*2)
+			self.exitButton.resize(padding*2.9, padding)
+			self.exitButton.move(padding+2*padding*2.9, windowHeight - padding*2)
+			self.exitButton.setObjectName('btn')
 			self.deleteButton = QPushButton('Delete', self)
 			self.deleteButton.clicked.connect(self.delete)
-			self.deleteButton.setStyleSheet(View.BUTTON_STYLE)
-			self.deleteButton.resize(padding*2.6, padding)
-			self.deleteButton.move(padding+3*padding*2.6, windowHeight - padding*2)
+			self.deleteButton.resize(padding*2.9, padding)
+			self.deleteButton.move(padding+3*padding*2.9, windowHeight - padding*2)
+			self.deleteButton.setObjectName('btn')
 
 			self.statusText = QLabel(self)
 			self.statusText.resize(windowWidth-padding*8, padding)
@@ -506,27 +504,32 @@ class View(QWidget):
 
 	# Show Full Screen mode components such as textbox, buttons, and tags
 	def showFullModeComponents(self):
-		padding = 30
 		windowWidth = self.model.getWindowWidth()
 		windowHeight = self.model.getWindowHeight()
+		padding = windowWidth / 25 if windowWidth / 25 < 35 else 35
 		
 		# create components if necessary
 		if len(self.fullModeComponents) == 0:
 			
 			self.tagTextBox = QLineEdit(self)	
-			self.tagTextBox.resize(windowWidth/3, padding*1.5)
+			self.tagTextBox.resize(windowWidth/3, padding*1.3)
 			self.tagTextBox.move(padding, windowHeight - padding*2)
 			self.tagTextBox.setPlaceholderText('Enter tag text...')
-			self.tagTextBox.setStyleSheet(
-				'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
-			)	
+			self.tagTextBox.setObjectName('text_box')
+			# self.tagTextBox.setStyleSheet(
+			# 	'border: 2px solid '+View.SEL+'; border-radius: 5px; font-weight: bold; padding: 5px;'
+			# )	
 			# connect button to functions add/saveTags
 			self.addButton = QPushButton('Add Tag', self)
 			self.saveTagsButton = QPushButton('Save All Tags', self)
 			self.addButton.clicked.connect(self.addTag)
 			self.saveTagsButton.clicked.connect(self.saveTags)
-			self.addButton.setStyleSheet(View.BUTTON_STYLE)
-			self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
+			# self.addButton.setStyleSheet(View.BUTTON_STYLE)
+			# self.saveTagsButton.setStyleSheet(View.BUTTON_STYLE)
+			self.addButton.resize(padding*2.6, padding)
+			self.saveTagsButton.resize(padding*3.3, padding)
+			self.addButton.setObjectName('btn')
+			self.saveTagsButton.setObjectName('btn')
 
 			self.addButton.move(windowWidth/2, windowHeight - padding*1.7)
 			self.saveTagsButton.move(windowWidth/1.5, windowHeight - padding*1.7)
