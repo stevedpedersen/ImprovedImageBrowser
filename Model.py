@@ -9,6 +9,7 @@
 
 
 import os, sys
+import ImageFetcher
 from urllib.request import urlopen
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap, QImage
@@ -67,47 +68,57 @@ class Model(QLabel):
 	def requestImages(self, urls):
 		self.searchQty = len(urls)
 		self.nam = QtNetwork.QNetworkAccessManager()
-		self.nam.finished.connect(self.handleImageResponse)		
+		# self.nam.finished.connect(self.handleImageResponse)	
+
 		fileNames = []
 		for url in urls:		
 			k = url.rfind("/")
 			imgFileName = url[k+1:]	
 			fileNames.append(imgFileName)
 
-			req = QtNetwork.QNetworkRequest(QtCore.QUrl(url))
-			self.nam.get(req)
+			# req = QtNetwork.QNetworkRequest(QtCore.QUrl(url))
+			# res = self.nam.get(req)
+			# res.finished.connect(self.handleImageResponse)
+
+			fetcher = ImageFetcher.ImageFetcher(self.nam, url)
+			promise = fetcher.getPromise()
+			promise.addCallback(self.handleImageResponse)
+			# cut handleImageResponse() content and use it for ImageFetcher's handler 
+
+			# self.imageRequest.append(fetcher.getPromise())
+			# req.deleteLater()
 		
 		return fileNames
 
 	# Handler from QNetworkAccessManager request made in requestImages()
 	# Uses raw data from response and creates Pixmaps to be displayed in Browser
-	def handleImageResponse(self, reply):
-		er = reply.error()
-		if er == QtNetwork.QNetworkReply.NoError:
-			if self.searchCount == 0:
-				self.appendIndex = self.getImageCount()-1
+	def handleImageResponse(self, url_data):
+		# er = reply.error()
+		# if er == QtNetwork.QNetworkReply.NoError:
+		# 	if self.searchCount == 0:
+		# 		self.appendIndex = self.getImageCount()-1
 
-			url_data = reply.readAll()
-			thumb = self.resizeAndFrame(url_data, self.thumbWidth, self.thumbHeight, self.thumbBorder)
-			full = self.resizeAndFrame(url_data, self.fullWidth, self.fullHeight, self.fullBorder)
+		url_data = url_data
+		thumb = self.resizeAndFrame(url_data, self.thumbWidth, self.thumbHeight, self.thumbBorder)
+		full = self.resizeAndFrame(url_data, self.fullWidth, self.fullHeight, self.fullBorder)
 
-			self.images[0].append(thumb)
-			self.images[1].append(full)
-			self.imageCount += 1
-			self.searchCount +=1
+		self.images[0].append(thumb)
+		self.images[1].append(full)
+		self.imageCount += 1
+		self.searchCount +=1
 
-			# end of full image search
-			if self.searchQty == self.searchCount:
-				# print('new leftmost and selected: ', self.getSelectedIndex() - self.searchQty)
-				self.setLeftmostIndex(self.getImageCount() - self.searchQty)
-				self.setSelectedIndex(self.getImageCount() - self.searchQty)
-				self.searchQty, self.searchCount = 0, 0
-				if self.view.statusText is not None:
-					self.view.statusText.setText('')	
-				self.view.setFocus()
-						
-			self.view.draw()
-			self.view.initTags()
+		# end of full image search
+		if self.searchQty == self.searchCount:
+			# print('new leftmost and selected: ', self.getSelectedIndex() - self.searchQty)
+			self.setLeftmostIndex(self.getImageCount() - self.searchQty)
+			self.setSelectedIndex(self.getImageCount() - self.searchQty)
+			self.searchQty, self.searchCount = 0, 0
+			if self.view.statusText is not None:
+				self.view.statusText.setText('')	
+			self.view.setFocus()
+					
+		self.view.draw()
+		self.view.initTags()
 			# self.view.statusText.setText('Success!')
 
 	# Scale image to width or height based on image orientation	& label dimensions

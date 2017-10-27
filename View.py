@@ -22,7 +22,7 @@ class View(QWidget):
 	BTNS 	= '#D3D3D3'	
 
 	WINDOW_TITLE = 'Image Browser'
-	THUMB_QTY = 5
+	THUMB_QTY = 20
 	MAX_RESULTS = 20
 	FLICKR_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&sort=relevance'
 
